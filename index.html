@@ -252,6 +252,7 @@ body{margin:0}
 
     <div class="block" id="flowBlock">
       <div class="block-head"><h2 id="flowTitle"></h2><span class="muted" id="flowNote"></span></div>
+      <div class="chips" id="flowWho"></div>
       <div class="heat" id="heat"></div>
       <p class="note" id="flowTop"></p>
     </div>
@@ -300,7 +301,7 @@ body{margin:0}
 
 <script>
 (()=>{
-const APP_VERSION='202611091524';
+const APP_VERSION='202611091540';
 const OWNER='warren0867',REPO='lotto-data',API=`https://api.github.com/repos/${OWNER}/${REPO}/contents/data/`;
 const $=id=>document.getElementById(id);
 const won=n=>n.toLocaleString('ko-KR');
@@ -545,7 +546,7 @@ function renderEq(){
 let mode='draw',rvRound=null,shown=new Set(),busy=false,cancelArm=false;
 function drawRow(x,d,canUse){
   const m=d?x.nums.filter(n=>d.n.includes(n)).length:null;
-  const eq=x.hogi?`${x.hogi}호기·${x.ballset}세트 `:'';
+  const eq=(x.by==='claude'?'클로드 · ':'')+(x.hogi?`${x.hogi}호기·${x.ballset}세트 `:'');
   const tag=x.env?`<span class="tag env">${eq}${x.from}회 이어</span>`:`<span class="tag">${eq}일반</span>`;
   const use=canUse?`<button class="use" data-id="${x.id}" aria-pressed="${x.use!==false}">${x.use!==false?'마킹 포함':'마킹 제외'}</button>`:'';
   return `<div class="item"><span class="t">${hm(x.at)}</span>${x.nums.slice().sort((a,b)=>a-b).map(n=>ballHtml(n,'sm')).join('')}<span class="plus" style="color:var(--faint)">+</span>${ballHtml(x.bonus,'sm')}${tag}${m!==null?`<span class="tag p2">${m}개 일치</span>`:''}${use}</div>`}
@@ -559,8 +560,11 @@ function renderLog(){
       return `<div class="grp-h">${e}회<span>${xs.length}세트${d?` · 당첨 ${d.n.join(' ')} + ${d.b}`:' · 추첨 전'}</span></div>`+xs.map(x=>drawRow(x,d,false)).join('')}).join('');
   $('logList').querySelectorAll('.use').forEach(b=>b.onclick=()=>toggleUse(b.dataset.id));
 }
+let flowWho='all';
 function renderFlow(){
-  const xs=DRAWS.filter(x=>x.round===NEXT),cnt=Array(46).fill(0);xs.forEach(x=>x.nums.forEach(n=>cnt[n]++));
+  $('flowWho').innerHTML=[['all','전체'],['me','내가 뽑은 것'],['claude','클로드']].map(([k,t])=>`<button data-k="${k}" aria-pressed="${k===flowWho}">${t}</button>`).join('');
+  $('flowWho').querySelectorAll('button').forEach(b=>b.onclick=()=>{flowWho=b.dataset.k;renderFlow()});
+  const xs=DRAWS.filter(x=>x.round===NEXT&&(flowWho==='all'||(flowWho==='claude')===(x.by==='claude'))),cnt=Array(46).fill(0);xs.forEach(x=>x.nums.forEach(n=>cnt[n]++));
   const mx=Math.max(1,...cnt);
   $('flowTitle').textContent=`${NEXT}회 번호 흐름`;
   $('flowNote').textContent=xs.length?`${xs.length}세트 · 본번호 ${xs.length*6}개`:'';
