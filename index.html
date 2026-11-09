@@ -194,10 +194,10 @@ body{margin:0}
     <h2>처음 한 번만 연결해 주세요</h2>
     <p class="muted">기록은 비공개 저장소(warren0867/lotto-data)에 저장됩니다. 이 폰이 그 저장소를 읽고 쓰려면 GitHub 토큰이 한 번 필요합니다. 토큰은 이 기기에만 저장됩니다.</p>
     <ol>
-      <li><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub 토큰 만들기</a>를 엽니다.</li>
+      <li>홈 화면 앱 안에서는 GitHub 로그인이 막힐 수 있습니다. 아래 주소를 복사해 <b>사파리</b>에 붙여넣고 GitHub에 로그인합니다.<div class="row" style="margin-top:6px;gap:6px;align-items:center"><code id="tokUrl" style="font-size:12px;word-break:break-all">github.com/settings/personal-access-tokens/new</code><button class="ghost" id="copyUrl" type="button">주소 복사</button></div></li>
       <li>Repository access → Only select repositories → <b>lotto-data</b>를 고릅니다.</li>
       <li>Permissions → Contents를 <b>Read and write</b>로 바꾸고 만듭니다.</li>
-      <li>나온 토큰(github_pat_…)을 아래에 붙여넣습니다.</li>
+      <li>Generate token → 나온 토큰(github_pat_…)을 복사하고, 홈 화면 앱으로 돌아와 아래에 붙여넣습니다.</li>
     </ol>
     <input id="tokenIn" type="password" autocomplete="off" placeholder="github_pat_…" aria-label="GitHub 토큰">
     <button class="go" id="tokenSave">연결</button>
@@ -289,7 +289,7 @@ body{margin:0}
 
 <script>
 (()=>{
-const APP_VERSION='202611091455';
+const APP_VERSION='202611091506';
 const OWNER='warren0867',REPO='lotto-data',API=`https://api.github.com/repos/${OWNER}/${REPO}/contents/data/`;
 const $=id=>document.getElementById(id);
 const won=n=>n.toLocaleString('ko-KR');
@@ -341,6 +341,7 @@ async function write(name,mutate,msg){
   catch(e){syncState='err';renderSync();status('저장하지 못했습니다. 인터넷 연결을 확인하고 다시 눌러 주세요');return false}
 }
 function showSetup(on,msg){$('setup').hidden=!on;if(msg)$('setupMsg').textContent=msg}
+$('copyUrl').onclick=async e=>{const t='https://github.com/settings/personal-access-tokens/new';try{await navigator.clipboard.writeText(t);e.currentTarget.textContent='복사됨'}catch(err){const r=document.createRange();r.selectNodeContents($('tokUrl'));getSelection().removeAllRanges();getSelection().addRange(r)}};
 $('tokenSave').onclick=async()=>{const t=$('tokenIn').value.trim();if(!t)return;TOKEN=t;ls.set('lotto-gh-token',t);$('tokenIn').value='';$('setupMsg').textContent='연결 중…';await syncAll()};
 
 /* ── 앱 상태 ── */
