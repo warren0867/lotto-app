@@ -301,7 +301,7 @@ body{margin:0}
 
 <script>
 (()=>{
-const APP_VERSION='202611091540';
+const APP_VERSION='202611091551';
 const OWNER='warren0867',REPO='lotto-data',API=`https://api.github.com/repos/${OWNER}/${REPO}/contents/data/`;
 const $=id=>document.getElementById(id);
 const won=n=>n.toLocaleString('ko-KR');
@@ -316,7 +316,7 @@ const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:
 
 /* ── GitHub 저장소: data/official.json · rounds.json · app_draws.json · purchases.json ── */
 let TOKEN=ls.get('lotto-gh-token')||'';
-const F={official:null,rounds:null,app_draws:null,purchases:null},SHA={},ETAG={};
+const F={official:null,rounds:null,app_draws:null,purchases:null,flow:null},SHA={},ETAG={};
 let syncState='', lastSync=0;
 try{const c=JSON.parse(ls.get('lotto-cache')||'null');if(c)Object.assign(F,c)}catch(e){}
 const b64d=s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g,'')),c=>c.charCodeAt(0)));
@@ -343,7 +343,7 @@ async function ghEdit(name,mutate,msg){ // 최신본을 받아 고친 뒤 저장
 const cache=()=>ls.set('lotto-cache',JSON.stringify(F));
 async function syncAll(){
   if(!TOKEN){showSetup(true);return}
-  try{let ch=false;for(const n of ['official','rounds','app_draws','purchases'])ch=(await ghGet(n))||ch;
+  try{let ch=false;for(const n of ['official','rounds','app_draws','purchases','flow'])ch=(await ghGet(n).catch(e=>{if(n==='flow')return false;throw e}))||ch;
     syncState='ok';lastSync=Date.now();if(ch){cache();renderAll()}else renderSync();showSetup(false)}
   catch(e){syncState='err';renderSync();if(e.status===401||e.status===403||e.status===404)showSetup(true,'토큰을 확인해 주세요. lotto-data 저장소에 Contents 읽기·쓰기 권한이 있어야 합니다.')}
 }
@@ -361,7 +361,7 @@ const DRAW={},ROUNDS={},PRIZE={};let LAST=0,NEXT=0,NEXT_DATE=new Date(),RV=[],DR
 function recompute(){
   [DRAW,ROUNDS,PRIZE].forEach(o=>{for(const k in o)delete o[k]});
   for(const [e,x] of Object.entries(F.official||{})){DRAW[+e]={d:x.date,n:x.n,b:x.b,hogi:x.hogi};if(x.prize)PRIZE[+e]=x.prize}
-  for(const [e,x] of Object.entries(F.rounds||{}))ROUNDS[+e]={e:+e,g:x.groups||[],bought:!!x.bought,note:x.note||'',date:x.date,boughtAt:x.boughtAt};
+  for(const [e,x] of Object.entries(F.rounds||{}))ROUNDS[+e]={e:+e,g:x.groups||[],bought:!!x.bought,note:x.note||'',date:x.date,boughtAt:x.boughtAt,hogi:x.hogi,hogiSource:x.hogiSource,ballset:x.ballset};
   LAST=Math.max(0,...Object.keys(DRAW).map(Number));NEXT=LAST+1;
   NEXT_DATE=ROUNDS[NEXT]?.date?new Date(ROUNDS[NEXT].date+'T00:00:00'):(()=>{const t=new Date((DRAW[LAST]?.d||'2026-11-07')+'T00:00:00');t.setDate(t.getDate()+7);return t})();
   RV=Object.keys(ROUNDS).map(Number).filter(e=>DRAW[e]&&ROUNDS[e].g.length&&ROUNDS[e].bought).sort((a,b)=>b-a);
@@ -532,14 +532,16 @@ let selHogi=null,selSet=0,usedSet=0; // selSet 0 = 추첨할 때 무작위(방�
 function guessHogi(){ // 호기는 한 달 단위로 바뀐다(262~1249회 기록). 같은 달이면 직전 회차 호기, 달이 바뀌면 1→2→3 순서
   const d=DRAW[LAST];if(!d?.hogi)return null;const lm=new Date(d.d+'T00:00:00').getMonth();
   return NEXT_DATE.getMonth()===lm?d.hogi:d.hogi%3+1}
+let eqRound=0;
 function renderEq(){
-  const g=guessHogi();if(selHogi==null)selHogi=g||1;
-  $('hogiSel').innerHTML=[1,2,3].map(h=>`<button data-h="${h}" aria-pressed="${h===selHogi}">${h}호기${h===g?'<small>이번 달 추정</small>':''}</button>`).join('');
-  $('setSel').innerHTML=[0,1,2,3,4,5].map(k=>`<button data-k="${k}" aria-pressed="${k===selSet}">${k?k+'번':'무작위'}</button>`).join('');
+  const R=ROUNDS[NEXT]||{},g=R.hogi||guessHogi();
+  if(eqRound!==NEXT){eqRound=NEXT;selHogi=g||1;selSet=R.ballset||0} // 회차가 바뀌면 그 회차 셋팅으로
+  $('hogiSel').innerHTML=[1,2,3].map(h=>`<button data-h="${h}" aria-pressed="${h===selHogi}">${h}호기${h===g?`<small>${R.hogiSource&&R.hogiSource.startsWith('추정')?'이번 회차 추정':'이번 회차'}</small>`:''}</button>`).join('');
+  $('setSel').innerHTML=[1,2,3,4,5,0].map(k=>`<button data-k="${k}" aria-pressed="${k===selSet}">${k?k+'번':'매번 무작위'}${k&&k===R.ballset?'<small>이번 주</small>':''}</button>`).join('');
   $('hogiSel').querySelectorAll('button').forEach(b=>b.onclick=()=>{selHogi=+b.dataset.h;renderEq();setStage()});
   $('setSel').querySelectorAll('button').forEach(b=>b.onclick=()=>{selSet=+b.dataset.k;renderEq()});
   const d=DRAW[LAST];
-  $('eqNote').textContent=`실제 방송도 추첨기 3대 중 1대, 볼세트 5개 중 방청객이 고른 1개로 추첨합니다. 호기는 보통 한 달마다 바뀌며 ${LAST}회는 ${d?.hogi?d.hogi+'호기':'확인 전'}였습니다. 회차별 볼세트 번호는 공개되지 않습니다.`;
+  $('eqNote').textContent=`${NEXT}회 셋팅: ${R.hogi||g||'-'}호기${R.hogiSource?'('+R.hogiSource+')':''} · ${R.ballset?R.ballset+'번 볼세트(이번 주 고정)':'볼세트 매번 무작위'}. 실제 방송도 추첨기 3대 중 1대, 볼세트 5개 중 방청객이 고른 1개로 추첨합니다. ${LAST}회는 ${d?.hogi?d.hogi+'호기':'확인 전'}였고, 회차별 볼세트 번호는 공개되지 않습니다.`;
 }
 
 /* ── 추첨 탭 ── */
@@ -567,7 +569,7 @@ function renderFlow(){
   const xs=DRAWS.filter(x=>x.round===NEXT&&(flowWho==='all'||(flowWho==='claude')===(x.by==='claude'))),cnt=Array(46).fill(0);xs.forEach(x=>x.nums.forEach(n=>cnt[n]++));
   const mx=Math.max(1,...cnt);
   $('flowTitle').textContent=`${NEXT}회 번호 흐름`;
-  $('flowNote').textContent=xs.length?`${xs.length}세트 · 본번호 ${xs.length*6}개`:'';
+  const fl=F.flow?.[NEXT];$('flowNote').textContent=xs.length?`${xs.length}세트${fl?` · 자동 분석 ${fl.updated.slice(5)}`:''}`:'';
   $('heat').innerHTML=Array.from({length:45},(_,i)=>i+1).map(n=>`<span class="hc${cnt[n]?' on':''}" style="--c:${colOf(n)};--v:${(.35+.65*cnt[n]/mx).toFixed(2)}">${n}${cnt[n]?`<small>${cnt[n]}</small>`:''}</span>`).join('');
   const top=Array.from({length:45},(_,i)=>i+1).filter(n=>cnt[n]).sort((a,b)=>cnt[b]-cnt[a]||a-b).slice(0,8);
   $('flowTop').textContent=xs.length?`많이 나온 번호: ${top.map(n=>`${n}(${cnt[n]})`).join(' · ')}. 클로드와 코덱스가 이번 주 번호를 정할 때 이 기록을 읽습니다.`:'틈날 때 여러 번 돌려 두면 이번 주에 많이 나온 번호가 여기 쌓입니다. 클로드와 코덱스가 이번 주 번호를 정할 때 이 기록을 읽습니다.';
