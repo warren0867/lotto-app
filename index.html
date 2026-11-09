@@ -301,7 +301,7 @@ body{margin:0}
 
 <script>
 (()=>{
-const APP_VERSION='202611091551';
+const APP_VERSION='202611091623';
 const OWNER='warren0867',REPO='lotto-data',API=`https://api.github.com/repos/${OWNER}/${REPO}/contents/data/`;
 const $=id=>document.getElementById(id);
 const won=n=>n.toLocaleString('ko-KR');
@@ -378,13 +378,13 @@ function scoreLines(e,lines){const d=DRAW[e];if(!d)return null;let prize=0,best=
 function roundStat(e){const all=ROUNDS[e].g.flatMap(g=>g.l);return{...scoreLines(e,all),cost:all.length*1000,lines:all.length}}
 const rankText=ks=>{const c={};ks.forEach(k=>c[k]=(c[k]||0)+1);return Object.keys(c).sort().map(k=>`${k}등 ${c[k]}장`).join(' · ')};
 function markGroups(e){
-  const R=ROUNDS[e],base=(R?.g||[]).filter(g=>!g.machine),picked=DRAWS.filter(x=>x.round===e&&x.use!==false).sort((a,b)=>a.at-b.at);
+  const R=ROUNDS[e],base=(R?.g||[]).filter(g=>!g.machine),picked=DRAWS.filter(x=>x.round===e&&x.use===true).sort((a,b)=>a.at-b.at);
   return{note:R?.note||'',g:[...base,...(picked.length?[{t:'추첨기 번호',l:picked.map(x=>x.nums.slice().sort((a,b)=>a-b)),machine:true}]:[])]};
 }
 
 /* ── 기록 쓰기 ── */
 const addDraw=rec=>write('app_draws',a=>{(a||[]).push(rec);return a||[rec]},`앱 추첨 ${rec.round}회 ${rec.nums.slice().sort((a,b)=>a-b).join(',')}+${rec.bonus}`);
-const toggleUse=id=>write('app_draws',a=>a.map(x=>x.id===id?{...x,use:x.use===false}:x),'앱 추첨 마킹 포함/제외 변경');
+const toggleUse=id=>write('app_draws',a=>a.map(x=>x.id===id?{...x,use:x.use!==true}:x),'앱 추첨 구매 포함 변경');
 async function savePurchase(e,G){
   const lines=G.flatMap(g=>g.l),at=Date.now();
   const ok=await write('rounds',r=>{r[e]={...(r[e]||{}),groups:G.map(g=>({t:g.t,l:g.l,online:!!g.online,...(g.machine?{machine:true}:{})})),bought:true,boughtAt:at};return r},`${e}회 구매 완료 ${lines.length}줄`);
@@ -550,14 +550,14 @@ function drawRow(x,d,canUse){
   const m=d?x.nums.filter(n=>d.n.includes(n)).length:null;
   const eq=(x.by==='claude'?'클로드 · ':'')+(x.hogi?`${x.hogi}호기·${x.ballset}세트 `:'');
   const tag=x.env?`<span class="tag env">${eq}${x.from}회 이어</span>`:`<span class="tag">${eq}일반</span>`;
-  const use=canUse?`<button class="use" data-id="${x.id}" aria-pressed="${x.use!==false}">${x.use!==false?'마킹 포함':'마킹 제외'}</button>`:'';
+  const use=canUse?`<button class="use" data-id="${x.id}" aria-pressed="${x.use===true}">${x.use===true?'구매에 넣음':'구매에 넣기'}</button>`:'';
   return `<div class="item"><span class="t">${hm(x.at)}</span>${x.nums.slice().sort((a,b)=>a-b).map(n=>ballHtml(n,'sm')).join('')}<span class="plus" style="color:var(--faint)">+</span>${ballHtml(x.bonus,'sm')}${tag}${m!==null?`<span class="tag p2">${m}개 일치</span>`:''}${use}</div>`}
 function renderLog(){
   const mine=DRAWS.filter(x=>x.round===NEXT),locked=!!ROUNDS[NEXT]?.bought;
   $('logTitle').textContent=`${NEXT}회 추첨 기록`;
   $('logNote').textContent=`${mine.length}세트 · 저장소에 기록`;
   const older=[...new Set(DRAWS.filter(x=>x.round!==NEXT).map(x=>x.round))].sort((a,b)=>b-a);
-  $('logList').innerHTML=`<div class="list">${mine.length?mine.map(x=>drawRow(x,null,!locked)).join(''):'<div class="empty">뽑은 번호는 여기 쌓이고, 마킹표에 자동으로 들어갑니다.</div>'}</div>`+
+  $('logList').innerHTML=`<div class="list">${mine.length?mine.map(x=>drawRow(x,null,!locked)).join(''):'<div class="empty">뽑은 번호는 분석용으로 여기 쌓입니다. 사고 싶은 번호만 ‘구매에 넣기’를 누르면 마킹표에 들어갑니다.</div>'}</div>`+
     older.map(e=>{const xs=DRAWS.filter(x=>x.round===e),d=DRAW[e];
       return `<div class="grp-h">${e}회<span>${xs.length}세트${d?` · 당첨 ${d.n.join(' ')} + ${d.b}`:' · 추첨 전'}</span></div>`+xs.map(x=>drawRow(x,d,false)).join('')}).join('');
   $('logList').querySelectorAll('.use').forEach(b=>b.onclick=()=>toggleUse(b.dataset.id));
@@ -639,9 +639,8 @@ $('goBtn').onclick=async()=>{
     const env=$('envOpt').checked;let nums,tries=0;usedSet=selSet||1+cInt(5);status(`${selHogi}호기 · ${usedSet}번 볼세트`);await sleep(700);
     if(env){const r=await reproduce(tk);if(!r){busy=false;btn.disabled=false;return}nums=r.nums;tries=r.tries}else nums=cDraw();
     const ok=await perform(nums,tk,{premixed:env});if(tk.stop)return;busy=false;btn.disabled=false;btn.textContent='한 번 더 뽑기';
-    if(ok){const locked=!!ROUNDS[NEXT]?.bought;
-      const rec={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),round:NEXT,nums:nums.slice(0,6),bonus:nums[6],env,from:env?LAST:null,tries,hogi:selHogi,ballset:usedSet,use:!locked,at:Date.now()};
-      status('저장 중…');if(await addDraw(rec))status(locked?'저장했습니다 · 이미 구매한 회차라 마킹표에는 넣지 않았습니다':'저장했고 마킹표에 넣었습니다')}
+    if(ok){      const rec={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),round:NEXT,nums:nums.slice(0,6),bonus:nums[6],env,from:env?LAST:null,tries,hogi:selHogi,ballset:usedSet,use:false,at:Date.now()};
+      if(await addDraw(rec))status('추첨 완료')}
   }else{
     const d=DRAW[rvRound],order=d.n.slice().sort(()=>Math.random()-.5).concat([d.b]);renderReview();
     const ok=await perform(order,tk,{onBall:(i,n)=>{if(i<6){shown.add(n);grade(false)}else grade(true)}});
