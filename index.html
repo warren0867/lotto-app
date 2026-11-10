@@ -330,7 +330,7 @@ summary{cursor:pointer;font-size:14px;font-weight:700}details[open]>summary{marg
 
 <script>
 (()=>{
-const APP_VERSION='202611101900';
+const APP_VERSION='202611102000';
 const OWNER='warren0867',REPO='lotto-data',API=`https://api.github.com/repos/${OWNER}/${REPO}/contents/data/`;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -394,11 +394,13 @@ const DRAW={},ROUNDS={},PRIZE={};let LAST=0,NEXT=0,NEXT_DATE=new Date(),RV=[],DR
 function recompute(){
   [DRAW,ROUNDS,PRIZE].forEach(o=>{for(const k in o)delete o[k]});
   for(const [e,x] of Object.entries(F.official||{})){DRAW[+e]={d:x.date,n:x.n,b:x.b,hogi:x.hogi};if(x.prize)PRIZE[+e]=x.prize}
-  for(const [e,x] of Object.entries(F.rounds||{}))ROUNDS[+e]={e:+e,g:x.groups||[],bought:!!x.bought,note:x.note||'',date:x.date,boughtAt:x.boughtAt,hogi:x.hogi,hogiSource:x.hogiSource,ballset:x.ballset};
+  for(const [e,x] of Object.entries(F.rounds||{}))ROUNDS[+e]={e:+e,g:x.groups||[],bought:!!x.bought,final:!!x.final,note:x.note||'',date:x.date,boughtAt:x.boughtAt,hogi:x.hogi,hogiSource:x.hogiSource,ballset:x.ballset};
   LAST=Math.max(0,...Object.keys(DRAW).map(Number));NEXT=LAST+1;
   NEXT_DATE=ROUNDS[NEXT]?.date?new Date(ROUNDS[NEXT].date+'T00:00:00'):(()=>{const t=new Date((DRAW[LAST]?.d||'2026-11-07')+'T00:00:00');t.setDate(t.getDate()+7);return t})();
   RV=Object.keys(ROUNDS).map(Number).filter(e=>DRAW[e]&&ROUNDS[e].g.length&&ROUNDS[e].bought).sort((a,b)=>b-a);
-  DRAWS=(F.app_draws||[]).slice().sort((a,b)=>b.at-a.at);PUR=F.purchases||{};
+  // 번호가 확정·구매됐거나 추첨이 끝난 회차의 앱 추첨 조합은 보여 주지 않는다(최종 번호 외 조합 삭제 규칙)
+  const closed=x=>{const R=ROUNDS[x.round];return !!(DRAW[x.round]||R?.bought||(R?.final&&x.use!==true))};
+  DRAWS=(F.app_draws||[]).filter(x=>!closed(x)).sort((a,b)=>b.at-a.at);PUR=F.purchases||{};
 }
 const matchOf=(l,d)=>l.filter(n=>d.n.includes(n)).length;
 const rankOf=(l,d)=>{const m=matchOf(l,d);return m===6?1:m===5?(l.includes(d.b)?2:3):m===4?4:m===3?5:0};
@@ -411,7 +413,8 @@ function scoreLines(e,lines){const d=DRAW[e];if(!d)return null;let prize=0,best=
 function roundStat(e){const all=ROUNDS[e].g.flatMap(g=>g.l);return{...scoreLines(e,all),cost:all.length*1000,lines:all.length}}
 const rankText=ks=>{const c={};ks.forEach(k=>c[k]=(c[k]||0)+1);return Object.keys(c).sort().map(k=>`${k}등 ${c[k]}장`).join(' · ')};
 function markGroups(e){
-  const R=ROUNDS[e],base=(R?.g||[]).filter(g=>!g.machine),picked=DRAWS.filter(x=>x.round===e&&x.use===true).sort((a,b)=>a.at-b.at);
+  const R=ROUNDS[e];if(R?.bought)return{note:R.note,g:R.g};
+  const base=(R?.g||[]).filter(g=>!g.machine),picked=DRAWS.filter(x=>x.round===e&&x.use===true).sort((a,b)=>a.at-b.at);
   return{note:R?.note||'',g:[...base,...(picked.length?[{t:'추첨기 번호',l:picked.map(x=>x.nums.slice().sort((a,b)=>a-b)),machine:true}]:[])]};
 }
 
@@ -605,7 +608,7 @@ function renderLog(){
   $('logTitle').textContent=`${NEXT}회 추첨 기록`;
   $('logNote').textContent=`${mine.length}세트 · 저장소에 기록`;
   const older=[...new Set(DRAWS.filter(x=>x.round!==NEXT).map(x=>x.round))].sort((a,b)=>b-a);
-  $('logList').innerHTML=`<div class="list">${mine.length?mine.slice(0,10).map(x=>drawRow(x,null,!locked)).join('')+(mine.length>10?'<details><summary>이전 기록 '+(mine.length-10)+'세트 보기</summary>'+mine.slice(10).map(x=>drawRow(x,null,!locked)).join('')+'</details>':''):'<div class="empty">뽑은 번호는 분석용으로 여기 쌓입니다. 사고 싶은 번호만 ‘구매에 넣기’를 누르면 마킹표에 들어갑니다.</div>'}</div>`+
+  $('logList').innerHTML=`<div class="list">${mine.length?mine.slice(0,10).map(x=>drawRow(x,null,!locked)).join('')+(mine.length>10?'<details><summary>이전 기록 '+(mine.length-10)+'세트 보기</summary>'+mine.slice(10).map(x=>drawRow(x,null,!locked)).join('')+'</details>':''):ROUNDS[NEXT]?.final||locked?'<div class="empty">이번 회차 번호가 확정되어 추첨 기록은 화면에서 지웠습니다. 새로 뽑아도 여기 남지 않습니다.</div>':'<div class="empty">뽑은 번호는 분석용으로 여기 쌓입니다. 사고 싶은 번호만 ‘구매에 넣기’를 누르면 마킹표에 들어갑니다.</div>'}</div>`+
     older.map(e=>{const xs=DRAWS.filter(x=>x.round===e),d=DRAW[e];
       return `<div class="grp-h">${e}회<span>${xs.length}세트${d?` · 당첨 ${d.n.join(' ')} + ${d.b}`:' · 추첨 전'}</span></div>`+xs.map(x=>drawRow(x,d,false)).join('')}).join('');
   $('logList').querySelectorAll('.use').forEach(b=>b.onclick=()=>toggleUse(b.dataset.id));
