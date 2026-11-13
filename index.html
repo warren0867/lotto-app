@@ -202,6 +202,12 @@ summary{cursor:pointer;font-size:14px;font-weight:700}details[open]>summary{marg
 [data-mk]{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s}
 [data-mk].done{opacity:.3}
 .game.done .k::after{content:" ✓";color:var(--teal)}
+.mk-new{display:flex;justify-content:space-between;align-items:baseline;margin:2px 0 8px;font-size:16px}
+.mk-new b{font-weight:900}.mk-new span{font-weight:800;color:var(--teal)}
+.mk-fix{margin-top:14px;border:1px dashed var(--line);border-radius:14px;padding:4px 12px}
+.mk-fix summary{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:10px 0;cursor:pointer;font-size:14px}
+.mk-fix summary span{color:var(--muted);font-size:12.5px}
+.mk-fix .paper{border:0;padding:0 2px}
 .slips{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;padding:10px 0 14px;border-top:1px solid var(--line)}
 .slip-g{border:1px solid var(--line);border-radius:12px;padding:8px}
 .slip-h{display:flex;justify-content:space-between;align-items:baseline;font-weight:800;font-size:14px;margin:0 2px 6px}
@@ -468,7 +474,7 @@ td.neg{color:var(--red)}
 </nav>
 <script>
 (()=>{
-const APP_VERSION='202611140030';
+const APP_VERSION='202611140100';
 const OWNER='warren0867',REPO='lotto-data',API=`https://api.github.com/repos/${OWNER}/${REPO}/contents/data/`;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -890,13 +896,20 @@ function renderMark(){
   $('markNote').textContent=`${md(NEXT_DATE)}(토) 추첨`;
   $('markWarn').innerHTML=!bought&&info.note?`<p class="warn">${esc(info.note)}</p>`:'';
   let paper=0;const L='ABCDE',done=MK.get('L'+e);
-  $('markPapers').innerHTML=(G.length?`<div class="mk-tools"><div class="mk-sw" role="group" aria-label="마킹표 보기"><button data-mv="slip" class="${mkView==='slip'?'on':''}">용지 칸</button><button data-mv="num" class="${mkView==='num'?'on':''}">번호</button></div><span>칠한 줄을 누르면 흐려져요</span></div>`:'')+G.map(g=>{const chunks=[];for(let i=0;i<g.l.length;i+=5)chunks.push(g.l.slice(i,i+5));
-    return chunks.map((c,ci)=>{const head=g.online?`온라인 · ${g.t}`:`용지 ${++paper} · ${g.t}${chunks.length>1?` (${ci+1}/${chunks.length})`:''}`;
+  // 고정 번호는 이미 칠해 둔 용지를 매주 다시 쓴다 → 접어 두고, 새 번호만 칠할 대상으로 보여 준다
+  const isFix=g=>/고정/.test(g.t),NEW=G.filter(g=>!isFix(g)),FIX=G.filter(isFix);
+  const paperHtml=(g,view,check)=>{const chunks=[];for(let i=0;i<g.l.length;i+=5)chunks.push(g.l.slice(i,i+5));
+    return chunks.map((c,ci)=>{const head=g.online?`온라인 · ${g.t}`:`${check?`용지 ${++paper} · `:''}${g.t}${chunks.length>1?` (${ci+1}/${chunks.length})`:''}`;
+      const mk=l=>{const k=mkKey(l);return check?` data-mk="${k}"`:''},dn=l=>check&&done.has(mkKey(l))?' done':'';
       return `<div class="paper"><div class="paper-h">${esc(head)}<span${g.online?' class="on"':''}>${g.online?'동행복권 사이트':`${c.length}게임 · ${won(c.length*1000)}원`}</span></div>${
-        mkView==='slip'?`<div class="slips">${c.map((l,i)=>{const k=mkKey(l);return `<div class="slip-g${done.has(k)?' done':''}" data-mk="${k}"><div class="slip-h"><b>${L[i]}</b><span>${l.map(p2).join(' ')}</span></div><div class="slip-n">${Array.from({length:45},(_,j)=>`<i${l.includes(j+1)?' class="m"':''}>${j+1}</i>`).join('')}</div></div>`}).join('')}</div>`
-        :c.map((l,i)=>{const k=mkKey(l);return `<div class="game${done.has(k)?' done':''}" data-mk="${k}"><span class="k">${L[i]}</span><div class="big">${l.map(n=>`<span>${p2(n)}</span>`).join('')}</div></div>`}).join('')}</div>`}).join('')}).join('');
-  const all=G.flatMap(g=>g.l),on=G.filter(g=>g.online).flatMap(g=>g.l).length;
-  $('markTotal').innerHTML=`<div class="total"><span>합계 <b>${all.length}줄 · ${won(all.length*1000)}원</b></span><span class="muted">온라인 ${on}줄 · 오프라인 ${all.length-on}줄 (용지 ${paper}장)${all.length?` · 칠함 <b id="mkProg" style="font-size:inherit">${all.filter(l=>done.has(mkKey(l))).length}/${all.length}</b>`:''}</span></div>`;
+        view==='slip'?`<div class="slips">${c.map((l,i)=>`<div class="slip-g${dn(l)}"${mk(l)}><div class="slip-h"><b>${L[i]}</b><span>${l.map(p2).join(' ')}</span></div><div class="slip-n">${Array.from({length:45},(_,j)=>`<i${l.includes(j+1)?' class="m"':''}>${j+1}</i>`).join('')}</div></div>`).join('')}</div>`
+        :c.map((l,i)=>`<div class="game${dn(l)}"${mk(l)}><span class="k">${L[i]}</span><div class="big">${l.map(n=>`<span>${p2(n)}</span>`).join('')}</div></div>`).join('')}</div>`}).join('')};
+  const nl=NEW.flatMap(g=>g.l),fl=FIX.flatMap(g=>g.l);
+  $('markPapers').innerHTML=(G.length?`<div class="mk-new"><b>이번 주 새로 칠할 번호</b><span>${nl.length?`${nl.length}줄`:'없음'}</span></div>`:'')
+    +(nl.length?`<div class="mk-tools"><div class="mk-sw" role="group" aria-label="마킹표 보기"><button data-mv="slip" class="${mkView==='slip'?'on':''}">용지 칸</button><button data-mv="num" class="${mkView==='num'?'on':''}">번호</button></div><span>칠한 줄을 누르면 흐려져요</span></div>`+NEW.map(g=>paperHtml(g,mkView,true)).join(''):G.length?'<p class="empty">이번 주는 새로 칠할 번호가 없어요. 고정 용지만 내면 돼요.</p>':'')
+    +(FIX.length?`<details class="mk-fix"><summary><b>고정 용지 그대로</b><span>${FIX.map(g=>`${g.t}${g.online?'(온라인)':''} ${g.l.length}줄`).join(' · ')}</span></summary>${FIX.map(g=>paperHtml(g,'num',false)).join('')}</details>`:'');
+  const all=G.flatMap(g=>g.l);
+  $('markTotal').innerHTML=`<div class="total"><span>합계 <b>${all.length}줄 · ${won(all.length*1000)}원</b></span><span class="muted">${nl.length?`새 번호 ${nl.length}줄(용지 ${paper}장) · 칠함 <b id="mkProg" style="font-size:inherit">${nl.filter(l=>done.has(mkKey(l))).length}/${nl.length}</b> · `:''}고정 ${fl.length}줄 그대로</span></div>`;
   $('buyBox').innerHTML=`<div class="done"><b>${R?.skipped?'이번 회차 미구매':'전부 구매 기준'}</b><span class="muted">지정한 번호는 매회 전부 구매로 기록합니다. 다르게 샀거나 안 산 회차만 아래에서 수정하세요.</span></div>`;
   if(!lEditDirty)renderLEditor($('lEditDetails').open&&lEditRound?lEditRound:e);
 }
@@ -940,10 +953,11 @@ const ddayHtml=d=>{const n=dday(d);return n>0?`<span class="dday">D-${n}</span>`
 function renderWeek(){
   const R=ROUNDS[NEXT],G=markGroups(NEXT).g,all=G.flatMap(g=>g.l),on=G.filter(g=>g.online).flatMap(g=>g.l).length;
   let paper=0;G.filter(g=>!g.online).forEach(g=>paper+=Math.ceil(g.l.length/5));
+  const NG=G.filter(g=>!/고정/.test(g.t)),newN=NG.flatMap(g=>g.l).length;let newP=0;NG.filter(g=>!g.online).forEach(g=>newP+=Math.ceil(g.l.length/5));
   $('weekCard').innerHTML=`<div class="hero-top"><span>로또 6/45 · <b>제 ${NEXT}회</b></span><span class="badge${R?.bought?' ok':''}">${R?.skipped?'미구매':all.length?'전부 구매 기준':'번호 준비 중'}</span></div>
     <div class="hero-when">${md(NEXT_DATE)}(토) 20:35 추첨 ${ddayHtml(NEXT_DATE)}</div>
     <div class="hero-amt">${all.length}줄<small>${won(all.length*1000)}원</small></div>
-    <div class="hero-sub">${all.length?`온라인 ${on}줄 · 판매점 ${all.length-on}줄 (용지 ${paper}장)`:'아직 이번 주 번호가 없습니다'}</div>`;
+    <div class="hero-sub">${all.length?`새로 칠할 ${newN}줄 (용지 ${newP}장) · 고정 ${all.length-newN}줄 그대로`:'아직 이번 주 번호가 없습니다'}</div>`;
   const e=RV[0];$('lastCard').hidden=!e;if(!e)return;
   const s=roundStat(e),d=DRAW[e];
   $('lastCard').innerHTML=`<div class="last-h"><h2>지난 ${e}회 결과</h2><span class="muted">${d.d.slice(5).replace('-','.')}(토)</span></div>
