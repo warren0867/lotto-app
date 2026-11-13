@@ -1,14 +1,23 @@
 {
-  "name": "로또 추첨기",
-  "short_name": "로또",
-  "start_url": "./#draw",
+  "name": "1등가즈아",
+  "short_name": "1등가즈아",
+  "start_url": "./#lotto-week",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#f4f3ef",
+  "theme_color": "#f4f3ef",
   "lang": "ko",
   "icons": [
-    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }

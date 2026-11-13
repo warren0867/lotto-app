@@ -3,231 +3,290 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>로또 추첨기</title>
-<meta name="theme-color" content="#ffffff">
+<title>1등가즈아</title>
+<meta name="theme-color" content="#f4f3ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101114" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="로또 추첨기">
+<meta name="apple-mobile-web-app-title" content="1등가즈아">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
-/* 동행복권 추첨결과 문법(흰 바탕·굵은 제목·청록 강조·굵은 윗줄 표) + 무대처럼 어두운 추첨기 카드 하나 */
+/* 1등가즈아 — 로또·연금 공용. 따뜻한 회색 바탕 + 흰 카드, 이번 주 행동은 짙은 카드 하나로 */
 :root{
-  --bg:#ffffff; --fg:#111111; --muted:#666666; --faint:#9a9a9a; --line:#e2e2e2; --strong:#222222; --card-line:#dcdcdc;
-  --teal:#11957d; --teal-ink:#ffffff; --teal-soft:#e7f3f0; --win-bg:#f0f8f5; --seg:#f2f3f5; --red:#d8314f;
-  --stage:#14181d; --stage-2:#1f262e; --stage-ink:#e9edf2; --stage-muted:#8d96a3; --stage-accent:#4fd6b8;
+  --bg:#f4f3ef; --card:#ffffff; --fg:#15171a; --muted:#6a6e75; --faint:#9da1a8; --line:#e6e4de; --strong:#2a2d33; --card-line:#dedbd3;
+  --ink:#15171a; --ink-2:#23262c; --on-ink:#f5f4f0; --on-ink-muted:#a7abb3;
+  --accent:#e9a800; --accent-soft:#fdf3d6; --accent-ink:#1b1500;
+  --teal:#0f8f78; --teal-ink:#ffffff; --teal-soft:#e3f2ee; --win-bg:#eef7f3; --seg:#ebe9e3; --red:#d8314f;
+  --stage:#14181d; --stage-2:#1f262e; --stage-ink:#e9edf2; --stage-muted:#8d96a3; --stage-accent:#ffc83d;
+  --shadow:0 1px 2px rgba(20,20,10,.04),0 6px 20px rgba(20,20,10,.05);
   --font:"Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  --tabbar:64px;
 }
+body[data-game="pension"]{--accent:#7b5cff; --accent-soft:#eeeaff; --accent-ink:#ffffff; --stage-accent:#b7a6ff}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#111315; --fg:#ededed; --muted:#a2a6ad; --faint:#6e737b; --line:#2b2f35; --strong:#d6d8db; --card-line:#30353c;
-  --teal:#3cc4a6; --teal-ink:#08110f; --teal-soft:#16302a; --win-bg:#13231f; --seg:#1d2024; --red:#ff6b81;
-  --stage:#0b0d10; --stage-2:#171c22; color-scheme:dark}}
+  --bg:#101114; --card:#181a1e; --fg:#ececec; --muted:#a3a7ae; --faint:#6f747c; --line:#2a2d33; --strong:#d6d8db; --card-line:#30343a;
+  --ink:#22252b; --ink-2:#2b2f36; --on-ink:#f2f2f2; --on-ink-muted:#a2a7af;
+  --accent-soft:#2e2712; --teal:#3cc4a6; --teal-ink:#08110f; --teal-soft:#15302a; --win-bg:#13231f; --seg:#212328; --red:#ff6b81;
+  --stage:#0b0d10; --stage-2:#171c22; --shadow:none; color-scheme:dark}
+  body[data-game="pension"]{--accent-soft:#251f3d}}
 :root[data-theme="dark"]{
-  --bg:#111315; --fg:#ededed; --muted:#a2a6ad; --faint:#6e737b; --line:#2b2f35; --strong:#d6d8db; --card-line:#30353c;
-  --teal:#3cc4a6; --teal-ink:#08110f; --teal-soft:#16302a; --win-bg:#13231f; --seg:#1d2024; --red:#ff6b81;
-  --stage:#0b0d10; --stage-2:#171c22; color-scheme:dark}
+  --bg:#101114; --card:#181a1e; --fg:#ececec; --muted:#a3a7ae; --faint:#6f747c; --line:#2a2d33; --strong:#d6d8db; --card-line:#30343a;
+  --ink:#22252b; --ink-2:#2b2f36; --on-ink:#f2f2f2; --on-ink-muted:#a2a7af;
+  --accent-soft:#2e2712; --teal:#3cc4a6; --teal-ink:#08110f; --teal-soft:#15302a; --win-bg:#13231f; --seg:#212328; --red:#ff6b81;
+  --stage:#0b0d10; --stage-2:#171c22; --shadow:none; color-scheme:dark}
 [hidden]{display:none!important}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
-.wrap{max-width:620px;margin:0 auto;padding-block:20px 64px;
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:640px;margin:0 auto;padding-top:calc(env(safe-area-inset-top,0px) + 12px);
+  padding-bottom:calc(var(--tabbar) + env(safe-area-inset-bottom,0px) + 32px);
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-header{display:flex;justify-content:space-between;align-items:flex-end;gap:6px 12px;flex-wrap:wrap;margin-bottom:14px}
-h1{margin:0;font-size:clamp(26px,6.4vw,34px);font-weight:800;letter-spacing:-.03em;line-height:1.2}
-.next{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
-.next b{color:var(--teal);font-weight:700}
-nav{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line);background:var(--bg);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
-nav a{text-align:center;padding:13px 0 11px;color:var(--faint);text-decoration:none;font-weight:600;font-size:16px;border-bottom:3px solid transparent;margin-bottom:-1px}
-nav a[aria-current="page"]{color:var(--fg);font-weight:800;border-bottom-color:var(--teal)}
-a:focus-visible,button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
-h2{margin:0;font-size:clamp(19px,4.8vw,22px);font-weight:800;letter-spacing:-.02em;text-wrap:balance}
-p{margin:0}
+h1,h2,h3,p{margin:0}
+h2{font-size:19px;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
 .muted{color:var(--muted);font-size:13px}
 .teal{color:var(--teal)}
-section.view{display:grid;gap:22px;margin-top:22px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{font-family:var(--font)}
+button:disabled{opacity:.45;cursor:default}
 
-.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--seg);border-radius:12px;padding:4px}
-.seg button{appearance:none;border:0;background:transparent;font:600 15px var(--font);color:var(--muted);padding:11px;border-radius:9px;cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--bg);color:var(--fg);font-weight:800;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+/* 상단: 브랜드 + 게임 전환 */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:900;font-size:21px;letter-spacing:-.04em}
+.logo{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:17px;color:#1b1500;
+  background:radial-gradient(circle at 35% 30%,#fff6 0,#fff0 55%),#ffc21a;box-shadow:inset 0 -3px 5px rgba(0,0,0,.18)}
+.icon-btn{appearance:none;border:1px solid var(--card-line);background:var(--card);color:var(--muted);width:38px;height:38px;border-radius:50%;display:grid;place-items:center;cursor:pointer}
+.icon-btn svg{width:18px;height:18px}
+.icon-btn.spin svg{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.game-sw{display:grid;grid-template-columns:1fr 1fr;background:var(--seg);border-radius:14px;padding:4px;margin-bottom:16px}
+.game-sw button{appearance:none;border:0;background:transparent;color:var(--muted);font-weight:700;font-size:15px;padding:10px 8px;border-radius:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+.game-sw button[aria-pressed="true"]{background:var(--card);color:var(--fg);font-weight:800;box-shadow:var(--shadow)}
+.game-sw i{width:9px;height:9px;border-radius:50%;background:#ffc21a}
+.game-sw button+button i{background:#7b5cff}
 
-.stage{background:radial-gradient(120% 80% at 50% 0%,var(--stage-2),var(--stage));border-radius:22px;padding:18px 14px;color:var(--stage-ink)}
-.stage-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:0 4px;flex-wrap:wrap}
-.stage-title{font-size:clamp(17px,4.6vw,21px);font-weight:700;letter-spacing:-.02em}
-.stage-title b{color:var(--stage-accent);font-weight:800}
-.stage-sub{font-size:12.5px;color:var(--stage-muted);font-variant-numeric:tabular-nums}
-canvas{display:block;width:100%;max-width:380px;aspect-ratio:360/380;margin:4px auto 0}
-.tray{display:flex;justify-content:center;align-items:center;gap:clamp(4px,1.5vw,9px);margin-top:10px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)}
-.slot{width:clamp(34px,10vw,46px);aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.06);box-shadow:inset 0 2px 6px rgba(0,0,0,.5);flex:none}
-.plus{color:var(--stage-muted);font-weight:300;font-size:22px;flex:none}
-.tlabels{display:grid;grid-template-columns:6fr 1.3fr;gap:8px;max-width:420px;margin:8px auto 0;font-size:12px;color:var(--stage-muted)}
-.tlabels span{display:flex;align-items:center;gap:8px;justify-content:center;white-space:nowrap}
-.tlabels span:first-child::before,.tlabels span:first-child::after{content:"";flex:1;border-top:1px solid rgba(255,255,255,.1)}
-.status{text-align:center;color:var(--stage-muted);font-size:13px;margin-top:10px;min-height:1.6em;font-variant-numeric:tabular-nums}
+/* 하단 탭 */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabbar .in{max-width:640px;margin:0 auto;display:flex}
+.tabbar button{flex:1;appearance:none;border:0;background:transparent;color:var(--faint);height:var(--tabbar);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11.5px;font-weight:700;cursor:pointer}
+.tabbar svg{width:23px;height:23px}
+.tabbar button[aria-current="page"]{color:var(--fg)}
+.tabbar button[aria-current="page"] svg{color:var(--accent)}
+
+section.view{display:grid;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:var(--shadow)}
+.block{display:grid;gap:12px}
+.block-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+
+/* 이번 주 히어로 */
+.hero{background:radial-gradient(130% 90% at 100% 0%,var(--ink-2),var(--ink));color:var(--on-ink);border-radius:24px;padding:20px 20px 18px;display:grid;gap:6px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-40px;top:-40px;width:150px;height:150px;border-radius:50%;background:var(--accent);opacity:.16}
+.hero-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--on-ink-muted);font-weight:600;position:relative;z-index:1}
+.hero-top b{color:var(--on-ink)}
+.badge{font-size:12px;font-weight:800;border-radius:99px;padding:4px 10px;background:rgba(255,255,255,.1);color:var(--on-ink);white-space:nowrap}
+.badge.ok{background:var(--accent);color:var(--accent-ink)}
+.hero-when{font-size:15px;font-weight:700;margin-top:6px;position:relative;z-index:1}
+.dday{display:inline-block;margin-left:6px;font-size:13px;font-weight:900;color:var(--accent-ink);background:var(--accent);border-radius:7px;padding:1px 7px;vertical-align:1px}
+.hero-amt{font-size:34px;font-weight:900;letter-spacing:-.04em;line-height:1.15;font-variant-numeric:tabular-nums;position:relative;z-index:1}
+.hero-amt small{font-size:16px;font-weight:600;color:var(--on-ink-muted);letter-spacing:-.01em;margin-left:6px}
+.hero-sub{font-size:13px;color:var(--on-ink-muted);position:relative;z-index:1}
+
+.go{appearance:none;border:0;border-radius:14px;background:var(--fg);color:var(--bg);font-weight:800;font-size:16.5px;padding:16px;cursor:pointer;width:100%}
+.go.accent{background:var(--accent);color:var(--accent-ink)}
+.ghost{appearance:none;background:transparent;border:1px solid var(--card-line);color:var(--muted);font-weight:600;font-size:13.5px;border-radius:99px;padding:7px 13px;cursor:pointer}
+.ghost[aria-pressed="true"]{border-color:var(--teal);color:var(--teal)}
+.link{appearance:none;border:0;background:none;color:var(--fg);font-weight:700;font-size:14px;padding:4px 0;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.link::after{content:"›";font-size:18px;line-height:1;color:var(--faint)}
+
+/* 지난 회차 요약 */
+.last{display:grid;gap:10px}
+.last-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.last-res{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:800;font-size:16px}
+.chip{display:inline-block;font-size:12.5px;font-weight:800;border-radius:8px;padding:2px 8px;background:var(--seg);color:var(--muted)}
+.chip.win{background:var(--teal-soft);color:var(--teal)}
+
+/* 공 */
+.balls{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
 .ball{width:clamp(34px,10vw,46px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;flex:none;color:#fff;
   font-weight:800;font-size:clamp(14px,4.2vw,19px);letter-spacing:-.02em;font-variant-numeric:tabular-nums;
   background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.28),rgba(255,255,255,0) 55%),var(--c);box-shadow:inset 0 -3px 6px rgba(0,0,0,.18)}
 .ball.land{animation:land .42s cubic-bezier(.3,1.4,.5,1)}
 @keyframes land{0%{transform:translateY(-16px)}60%{transform:translateY(2px)}100%{transform:none}}
 .ball.sm{width:30px;height:30px;font-size:13px;box-shadow:none}
+.plus{color:var(--stage-muted);font-weight:300;font-size:22px;flex:none}
 
+/* 추첨기 */
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--seg);border-radius:12px;padding:4px}
+.stage{background:radial-gradient(120% 80% at 50% 0%,var(--stage-2),var(--stage));border-radius:24px;padding:18px 14px;color:var(--stage-ink)}
+.stage-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:0 4px;flex-wrap:wrap}
+.stage-title{font-size:clamp(17px,4.6vw,21px);font-weight:700;letter-spacing:-.02em}
+.stage-title b{color:var(--stage-accent);font-weight:800}
+.stage-sub{font-size:12.5px;color:var(--stage-muted);font-variant-numeric:tabular-nums}
+canvas{display:block;width:100%;max-width:360px;aspect-ratio:360/380;margin:4px auto 0}
+.tray{display:flex;justify-content:center;align-items:center;gap:clamp(4px,1.5vw,9px);margin-top:10px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)}
+.slot{width:clamp(34px,10vw,46px);aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.06);box-shadow:inset 0 2px 6px rgba(0,0,0,.5);flex:none}
+.tlabels{display:grid;grid-template-columns:6fr 1.3fr;gap:8px;max-width:420px;margin:8px auto 0;font-size:12px;color:var(--stage-muted)}
+.tlabels span{display:flex;align-items:center;gap:8px;justify-content:center;white-space:nowrap}
+.tlabels span:first-child::before,.tlabels span:first-child::after{content:"";flex:1;border-top:1px solid rgba(255,255,255,.1)}
+.status{text-align:center;color:var(--stage-muted);font-size:13px;margin-top:10px;min-height:1.6em;font-variant-numeric:tabular-nums}
 .controls{display:grid;gap:12px}
 .optrow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .switch{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14.5px;font-weight:600;user-select:none;position:relative}
 .switch input{position:absolute;opacity:0;width:1px;height:1px}
-.switch .tr{width:44px;height:26px;border-radius:99px;background:var(--line);position:relative;transition:background .2s;flex:none}
+.switch .tr{width:44px;height:26px;border-radius:99px;background:var(--card-line);position:relative;transition:background .2s;flex:none}
 .switch .tr::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
 .switch input:checked+.tr{background:var(--teal)}
 .switch input:checked+.tr::after{transform:translateX(18px)}
 .switch input:focus-visible+.tr{outline:2px solid var(--teal);outline-offset:2px}
 .switch small{display:block;color:var(--faint);font-size:12px;font-weight:400;line-height:1.4}
-.go{appearance:none;border:0;border-radius:8px;background:var(--teal);color:var(--teal-ink);font:700 17px var(--font);padding:16px;cursor:pointer;width:100%}
-.go:disabled{opacity:.5;cursor:default}
-.ghost{appearance:none;background:transparent;border:1px solid var(--card-line);color:var(--muted);font:500 13.5px var(--font);border-radius:99px;padding:7px 13px;cursor:pointer}
-.ghost[aria-pressed="true"]{border-color:var(--teal);color:var(--teal)}
-
-.pills{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
-.pills button{appearance:none;flex:none;border:1px solid var(--card-line);background:var(--bg);color:var(--fg);font:600 14px var(--font);border-radius:99px;padding:8px 14px;cursor:pointer;font-variant-numeric:tabular-nums}
-.pills button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+details{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--card)}
+summary{cursor:pointer;font-size:14px;font-weight:700}details[open]>summary{margin-bottom:14px}
+.eq{display:grid;grid-template-columns:3.6em 1fr;align-items:center;gap:8px}
+.eq-l{font-size:13px;font-weight:700;color:var(--muted)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button,.pills button{appearance:none;border:1px solid var(--card-line);background:var(--card);color:var(--fg);font-weight:700;font-size:13.5px;border-radius:99px;padding:7px 13px;cursor:pointer;font-variant-numeric:tabular-nums;flex:none}
+.chips button[aria-pressed="true"],.pills button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chips button small{font-weight:500;opacity:.7;margin-left:3px}
+.pills{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.pills::-webkit-scrollbar{display:none}
 .pills .w{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--teal);margin-left:6px;vertical-align:2px}
 
-.block{display:grid;gap:10px}
-.block-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
-.list{border-top:2px solid var(--strong)}
-.item{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:11px 4px;border-bottom:1px solid var(--line)}
+/* 목록·복기 */
+.list{border-top:1px solid var(--line)}
+.item{display:flex;align-items:center;gap:5px;flex-wrap:wrap;row-gap:8px;padding:11px 2px;border-bottom:1px solid var(--line)}
 .item .t{color:var(--muted);font-size:12.5px;width:42px;flex:none;font-variant-numeric:tabular-nums}
 .item .tag{margin-left:auto;font-size:12px;color:var(--muted)}
 .item .tag.env{color:var(--teal);font-weight:600}
 .item .p2{color:var(--faint)}
-.empty{padding:18px 4px;color:var(--faint);font-size:14px;border-bottom:1px solid var(--line)}
-.grp-h{display:flex;justify-content:space-between;gap:8px;padding:18px 4px 8px;border-bottom:2px solid var(--strong);font-weight:700;font-size:14.5px}
+.use{appearance:none;border:1px solid var(--card-line);background:transparent;color:var(--faint);font-weight:700;font-size:11.5px;border-radius:99px;padding:3px 8px;cursor:pointer}
+.use[aria-pressed="true"]{border-color:var(--teal);color:var(--teal)}
+.empty{padding:18px 2px;color:var(--faint);font-size:14px}
+.grp-h{display:flex;justify-content:space-between;gap:8px;padding:16px 2px 8px;border-bottom:1px solid var(--strong);font-weight:800;font-size:14.5px}
 .grp-h span{font-weight:500;color:var(--muted);font-size:12.5px;text-align:right}
-.ln{display:grid;grid-template-columns:2.2em 1fr 3.2em;align-items:center;gap:6px;padding:9px 4px;border-bottom:1px solid var(--line)}
-.ln .k{font-size:12.5px;color:var(--faint);font-weight:600;font-variant-numeric:tabular-nums}
+.ln{display:grid;grid-template-columns:2.2em 1fr 3.2em;align-items:center;gap:6px;padding:9px 2px;border-bottom:1px solid var(--line)}
+.ln .k{font-size:12.5px;color:var(--faint);font-weight:700;font-variant-numeric:tabular-nums}
 .nums{display:flex;gap:5px}
-.n{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--card-line);font-size:13.5px;font-weight:600;flex:none;font-variant-numeric:tabular-nums}
+.n{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--card-line);font-size:13.5px;font-weight:700;flex:none;font-variant-numeric:tabular-nums}
 .n.hit{background:var(--c);border-color:transparent;color:#fff;font-weight:800;animation:pop .3s ease-out}
 .n.bon{border:2px solid var(--c);color:var(--c)}
 @keyframes pop{0%{transform:scale(.7)}100%{transform:none}}
 .ln .r{text-align:right;font-size:13px;color:var(--faint);font-variant-numeric:tabular-nums}
 .ln.win{background:var(--win-bg)}
 .ln.win .r{color:var(--teal);font-weight:800;font-size:14.5px}
-.sum{background:var(--teal-soft);border-radius:14px;padding:16px;display:grid;gap:4px}
+.sum{background:var(--teal-soft);border-radius:16px;padding:16px;display:grid;gap:4px}
 .sum b{font-size:clamp(18px,4.8vw,22px);font-weight:800;letter-spacing:-.02em}
 .sum span{font-size:13px;color:var(--muted)}
+.sum.lose{background:var(--seg)}
 
-.kpis{display:grid;grid-template-columns:repeat(2,1fr);border-top:2px solid var(--strong)}
-.kpi{padding:16px 8px;border-bottom:1px solid var(--line);text-align:center}
-.kpi:nth-child(odd){border-right:1px solid var(--line)}
-.kpi b{display:block;font-size:clamp(19px,5.2vw,24px);font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+/* 마킹표 */
+.paper{border:1px solid var(--line);border-radius:16px;padding:4px 14px;background:var(--card)}
+.paper+.paper{margin-top:10px}
+.paper-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;padding:12px 0 8px;font-weight:800;font-size:15px}
+.paper-h span{font-weight:500;font-size:12.5px;color:var(--muted)}
+.paper-h .on{color:var(--teal);font-weight:700}
+.game{display:grid;grid-template-columns:1.8em 1fr;align-items:center;gap:8px;padding:12px 0;border-top:1px solid var(--line)}
+.game .k{font-weight:800;color:var(--faint);font-size:15px}
+.game .big{display:flex;justify-content:space-between;font-size:clamp(20px,6vw,26px);font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.game .big span{min-width:1.6em;text-align:center}
+.total{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;padding:14px 4px;border-top:1px solid var(--strong);border-bottom:1px solid var(--line);
+  position:sticky;bottom:calc(var(--tabbar) + env(safe-area-inset-bottom,0px));background:var(--card);z-index:3}
+.total b{font-size:20px;font-weight:900}
+.done{background:var(--teal-soft);border-radius:16px;padding:16px;display:grid;gap:8px}
+.done b{font-size:18px;font-weight:800;color:var(--teal)}
+.done .row{display:flex;gap:8px;flex-wrap:wrap}
+.warn{font-size:13px;color:var(--muted);background:var(--seg);border-radius:12px;padding:10px 12px}
+
+/* 연금 표 */
+.tk{display:grid;gap:8px;padding:14px 0;border-top:1px solid var(--line)}
+.tk:first-child{border-top:0}
+.tk-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.tk-t{font-weight:800;font-size:14px;display:flex;align-items:center;gap:6px}
+.jo{display:inline-flex;gap:3px}
+.jo i{font-style:normal;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:12px;font-weight:800;background:var(--seg);color:var(--faint)}
+.jo i.on{background:var(--accent-soft);color:var(--accent)}
+.jo i.won{background:var(--teal);color:#fff}
+.dg{display:flex;gap:6px}
+.dg span{flex:1;max-width:46px;aspect-ratio:4/5;border-radius:10px;border:1px solid var(--card-line);display:grid;place-items:center;font-size:clamp(20px,6vw,26px);font-weight:900;font-variant-numeric:tabular-nums;background:var(--card)}
+.dg span.hit{background:var(--teal);border-color:var(--teal);color:#fff}
+.dg span.bon{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.dg.sm{flex:none;gap:4px}.dg.sm span{flex:none;width:27px;max-width:none;font-size:16px;border-radius:7px}
+.dg.win span{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+.tk-r{font-size:13px;font-weight:800;color:var(--faint)}
+.tk-r.win{color:var(--teal)}
+.alt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.alt b{color:var(--accent);font-weight:800}
+.pres{display:grid;gap:12px}
+.pres-row{display:grid;grid-template-columns:4.2em 1fr;align-items:center;gap:10px}
+.pres-row .l{font-size:13px;font-weight:800;color:var(--muted)}
+
+/* 기록 */
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.kpi{border-radius:14px;background:var(--seg);padding:14px 16px}
+.kpi b{display:block;font-size:clamp(17px,4.6vw,22px);font-weight:900;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .kpi span{font-size:12.5px;color:var(--muted)}
 .kpi.pos b{color:var(--teal)}
 .kpi.neg b{color:var(--red)}
-.tw{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap;border-top:2px solid var(--strong)}
-th,td{padding:10px 4px;border-bottom:1px solid var(--line);text-align:center}
-thead th{font-weight:500;color:var(--muted);font-size:12px;border-bottom:1px solid var(--strong)}
+.all{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-radius:16px;padding:14px 16px;background:var(--ink);color:var(--on-ink)}
+.all span{font-size:12.5px;color:var(--on-ink-muted)}
+.all b{font-size:18px;font-weight:900;font-variant-numeric:tabular-nums}
+.all .neg{color:#ff8a9c}.all .pos{color:#5fe0c3}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap;border-top:1px solid var(--strong)}
+th,td{padding:10px 5px;border-bottom:1px solid var(--line);text-align:center}
+thead th{font-weight:600;color:var(--muted);font-size:12px}
 td.l,th.l{text-align:left}
-td.w{color:var(--teal);font-weight:700}
+td.w{color:var(--teal);font-weight:800}
 td.neg{color:var(--red)}
 .dist{display:grid;gap:8px}
 .drow{display:grid;grid-template-columns:3.2em 1fr 4.6em;align-items:center;gap:10px;font-size:13px;font-variant-numeric:tabular-nums}
 .drow .bars{display:grid;gap:3px}
 .bar{height:10px;border-radius:0 3px 3px 0;background:var(--teal);min-width:2px}
-.bar.exp{background:var(--line)}
+.bar.exp{background:var(--card-line)}
 .drow .v{text-align:right;color:var(--muted);font-size:12px;line-height:1.35}
 .legend{display:flex;gap:14px;font-size:12px;color:var(--muted)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .note{font-size:12.5px;color:var(--muted);padding-left:12px;position:relative}
 .note::before{content:"·";position:absolute;left:0}
-@media (max-width:420px){
-  .n{width:28px;height:28px;font-size:12.5px}
-  .nums{gap:4px}
-  .ln{grid-template-columns:1.9em 1fr 2.9em;gap:4px}
-}
-@media (prefers-reduced-motion:reduce){.ball.land,.n.hit{animation:none}}
-.seg.three{grid-template-columns:repeat(3,1fr)}
-.use{appearance:none;border:1px solid var(--card-line);background:transparent;color:var(--faint);font:600 11.5px var(--font);border-radius:99px;padding:3px 8px;cursor:pointer}
-.use[aria-pressed="true"]{border-color:var(--teal);color:var(--teal)}
-.paper{border-top:2px solid var(--strong)}
-.paper-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:14px 4px 8px;font-weight:800;font-size:15px}
-.paper-h span{font-weight:500;font-size:12.5px;color:var(--muted)}
-.paper-h .on{color:var(--teal);font-weight:700}
-.game{display:grid;grid-template-columns:1.8em 1fr;align-items:center;gap:8px;padding:10px 4px;border-top:1px solid var(--line)}
-.game .k{font-weight:800;color:var(--faint);font-size:15px}
-.game .big{display:flex;justify-content:space-between;max-width:330px;font-size:clamp(20px,6vw,26px);font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
-.game .big span{min-width:1.6em;text-align:center}
-.total{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;padding:14px 4px;border-top:2px solid var(--strong);border-bottom:1px solid var(--line)}
-.total b{font-size:20px;font-weight:800}
-.done{background:var(--teal-soft);border-radius:14px;padding:16px;display:grid;gap:8px}
-.done b{font-size:18px;font-weight:800;color:var(--teal)}
-.done .row{display:flex;gap:8px;flex-wrap:wrap}
 .heat{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
 .hc{aspect-ratio:1;border-radius:8px;display:grid;place-items:center;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;background:var(--seg);color:var(--muted);position:relative}
 .hc.on{color:#fff;background:color-mix(in srgb,var(--c) calc(var(--v)*100%),var(--seg))}
 .hc small{position:absolute;right:3px;bottom:1px;font-size:9.5px;font-weight:600;opacity:.85}
-.warn{font-size:13px;color:var(--muted);background:var(--seg);border-radius:10px;padding:10px 12px}
-body{margin:0}
-:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-.setup{display:grid;gap:12px;margin-top:22px;border:1px solid var(--card-line);border-radius:16px;padding:18px}
-.setup ol{margin:0;padding-left:20px;display:grid;gap:4px;font-size:14px}
-.setup input{font:inherit;padding:12px;border-radius:8px;border:1px solid var(--card-line);background:var(--bg);color:var(--fg);width:100%}
-.setup a{color:var(--teal)}
-.eq{display:grid;grid-template-columns:3.6em 1fr;align-items:center;gap:8px}
-.eq-l{font-size:13px;font-weight:700;color:var(--muted)}
-.chips{display:flex;gap:6px;flex-wrap:wrap}
-.chips button{appearance:none;border:1px solid var(--card-line);background:var(--bg);color:var(--fg);font:600 13.5px var(--font);border-radius:99px;padding:7px 12px;cursor:pointer}
-.chips button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
-.chips button small{font-weight:500;opacity:.7;margin-left:3px}
-.hdr-r{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-#refreshBtn{padding:6px 12px}
 .sync{display:inline-flex;align-items:center;gap:6px}
 .sync i{width:7px;height:7px;border-radius:50%;background:var(--faint);display:inline-block}
 .sync.ok i{background:var(--teal)}.sync.err i{background:var(--red)}
-/* 이번 주 행동을 먼저, 세부 기록은 접어서 표시 */
-body{background:color-mix(in srgb,var(--bg) 96%,var(--teal))}
-.wrap{max-width:760px;padding-top:28px}
-header{margin-bottom:24px} h1{font-size:26px}
-nav{border:1px solid var(--line);border-radius:16px;padding:4px;gap:4px;box-shadow:0 4px 18px #00000005}
-nav a{border:0;border-radius:11px;margin:0;padding:12px;color:var(--muted)}
-nav a[aria-current="page"]{background:var(--teal-soft);color:var(--teal)}
-section.view{gap:18px}
-#v-dash>.block,#flowBlock,#drawLog,#rvBlock{background:var(--bg);padding:22px;border:1px solid var(--line);border-radius:20px}
-.week-card{background:var(--teal-soft);border:1px solid var(--line);border-radius:22px;padding:24px;display:grid;gap:14px}
-.week-card h2{font-size:27px}.week-meta{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.badge{font-size:12px;font-weight:700;border:1px solid var(--card-line);border-radius:99px;padding:4px 10px;background:var(--bg)}
-.week-card .go{width:auto;padding:13px 20px}.week-actions{display:flex;gap:8px;flex-wrap:wrap}
-.week-budget{font-size:29px;font-weight:800;letter-spacing:-1px}.week-budget small{font-size:15px;font-weight:500;color:var(--muted)}
-.kpis{border-top:0;gap:10px}.kpi{border:0!important;border-radius:12px;background:var(--seg);text-align:left;padding:16px}
-.kpi b{font-size:clamp(17px,4.6vw,24px)}
-.paper{border:1px solid var(--line);border-radius:16px;padding:4px 14px;margin-bottom:14px;background:var(--bg)}
-.paper-h{flex-wrap:wrap}.game{padding:13px 0}.game .big{max-width:none}
-#markTotal{position:sticky;bottom:0;background:var(--bg);z-index:3;padding-bottom:env(safe-area-inset-bottom,0px)}
-.controls .go{border-radius:14px}details{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--bg)}
-summary{cursor:pointer;font-size:14px;font-weight:700}details[open]>summary{margin-bottom:14px}
-#appMessage{position:sticky;top:0;z-index:20;background:var(--teal-soft);border:1px solid var(--teal);padding:12px 16px;border-radius:12px;margin-bottom:12px;font-size:14px}
-#appMessage button{margin-left:8px}button:disabled{opacity:.45;cursor:default}
-#drawLog .item{row-gap:8px}.review-now{margin-top:12px}
-@media(max-width:420px){.wrap{padding-left:14px;padding-right:14px}.week-card{padding:20px}#v-dash>.block,#flowBlock,#drawLog,#rvBlock{padding:16px}.paper{padding-inline:10px}.week-budget{font-size:26px}}
-@media(max-width:350px){.kpis{grid-template-columns:1fr}.kpi{display:flex;justify-content:space-between;align-items:center;gap:8px}.kpi span{max-width:45%;text-align:right}.kpi b{white-space:nowrap;font-size:18px}}
+#appMessage{position:sticky;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:40;background:var(--card);border:1px solid var(--teal);box-shadow:var(--shadow);padding:12px 40px 12px 16px;border-radius:14px;margin-bottom:12px;font-size:14px}
+#appMessage .x{position:absolute;right:8px;top:8px;appearance:none;border:0;background:none;color:var(--muted);font-size:18px;cursor:pointer;width:28px;height:28px}
+.setup{display:grid;gap:12px;background:var(--card);border:1px solid var(--card-line);border-radius:20px;padding:18px}
+.setup ol{margin:0;padding-left:20px;display:grid;gap:4px;font-size:14px}
+.setup input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--card-line);background:var(--bg);color:var(--fg);width:100%}
+.setup a{color:var(--teal)}
+@media (max-width:420px){
+  .n{width:28px;height:28px;font-size:12.5px}.nums{gap:4px}
+  .ln{grid-template-columns:1.9em 1fr 2.9em;gap:4px}
+  .card{padding:16px}.hero{padding:18px}.hero-amt{font-size:30px}.paper{padding-inline:12px}
+}
+@media (max-width:350px){.kpis{grid-template-columns:1fr}.dg{gap:4px}}
+@media (prefers-reduced-motion:reduce){.ball.land,.n.hit,.icon-btn.spin svg{animation:none}}
 </style>
 </head>
-<body>
+<body data-game="lotto">
 <div class="wrap">
-  <div id="appMessage" role="status" hidden></div>
-  <header>
-    <h1>로또 추첨기</h1>
-    <span class="hdr-r"><span class="next" id="nextInfo"></span><button class="ghost" id="refreshBtn">새로고침</button></span>
+  <div id="appMessage" role="status" hidden><span></span><button class="x" aria-label="닫기">×</button></div>
+  <header class="top">
+    <div class="brand"><span class="logo">1</span>1등가즈아</div>
+    <button class="icon-btn" id="refreshBtn" aria-label="새로고침"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
   </header>
-  <nav>
-    <a href="#dash" data-t="dash">대시보드</a>
-    <a href="#draw" data-t="draw">추첨</a>
-  </nav>
+  <div class="game-sw" id="gameSw" role="group" aria-label="복권 종류">
+    <button data-g="lotto" aria-pressed="true"><i></i>로또 6/45</button>
+    <button data-g="pension" aria-pressed="false"><i></i>연금복권720+</button>
+  </div>
 
   <section class="setup" id="setup" hidden>
     <h2>처음 한 번만 연결해 주세요</h2>
     <p class="muted">기록은 비공개 저장소(warren0867/lotto-data)에 저장됩니다. 이 폰이 그 저장소를 읽고 쓰려면 GitHub 토큰이 한 번 필요합니다. 토큰은 이 기기에만 저장됩니다.</p>
     <ol>
-      <li>홈 화면 앱 안에서는 GitHub 로그인이 막힐 수 있습니다. 아래 주소를 복사해 <b>사파리</b>에 붙여넣고 GitHub에 로그인합니다.<div class="row" style="margin-top:6px;gap:6px;align-items:center"><code id="tokUrl" style="font-size:12px;word-break:break-all">github.com/settings/personal-access-tokens/new</code><button class="ghost" id="copyUrl" type="button">주소 복사</button></div></li>
+      <li>홈 화면 앱 안에서는 GitHub 로그인이 막힐 수 있습니다. 아래 주소를 복사해 <b>사파리</b>에 붙여넣고 GitHub에 로그인합니다.<div style="margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><code id="tokUrl" style="font-size:12px;word-break:break-all">github.com/settings/personal-access-tokens/new</code><button class="ghost" id="copyUrl" type="button">주소 복사</button></div></li>
       <li>Repository access → Only select repositories → <b>lotto-data</b>를 고릅니다.</li>
       <li>Permissions → Contents를 <b>Read and write</b>로 바꾸고 만듭니다.</li>
       <li>Generate token → 나온 토큰(github_pat_…)을 복사하고, 홈 화면 앱으로 돌아와 아래에 붙여넣습니다.</li>
@@ -237,14 +296,22 @@ summary{cursor:pointer;font-size:14px;font-weight:700}details[open]>summary{marg
     <p class="muted" id="setupMsg"></p>
   </section>
 
-  <section class="view" id="v-draw" hidden>
-    <div class="seg three" role="group" aria-label="모드">
-      <button id="mDraw" aria-pressed="true">추첨</button>
-      <button id="mReview" aria-pressed="false">복기</button>
-      <button id="mMark" aria-pressed="false">마킹</button>
+  <!-- 로또 · 이번 주 -->
+  <section class="view" id="lv-week" hidden>
+    <div class="hero" id="weekCard"></div>
+    <div class="card last" id="lastCard" hidden></div>
+    <div class="card block" id="markBlock">
+      <div class="block-head"><h2 id="markTitle"></h2><span class="muted" id="markNote"></span></div>
+      <div id="markWarn"></div>
+      <div id="markPapers"></div>
+      <div id="markTotal"></div>
+      <div id="buyBox"></div>
     </div>
-    <div class="pills" id="rvPills" hidden aria-label="복기할 회차"></div>
+  </section>
 
+  <!-- 로또 · 추첨/결과 (추첨기 공유) -->
+  <section class="view" id="v-draw" hidden>
+    <div class="pills" id="rvPills" hidden aria-label="복기할 회차"></div>
     <div class="stage" id="stageBox">
       <div class="stage-top">
         <span class="stage-title" id="stTitle"></span>
@@ -255,82 +322,113 @@ summary{cursor:pointer;font-size:14px;font-weight:700}details[open]>summary{marg
       <div class="tlabels"><span id="trayLabel">생성 번호</span><span>보너스</span></div>
       <div class="status" id="status" aria-live="polite"></div>
     </div>
-
     <div class="controls" id="ctlBox">
+      <div class="optrow" id="drawOpts">
+        <label class="switch"><input type="checkbox" id="envOpt"><span class="tr"></span><span>전회차와 같은 결과에서 이어 뽑기<small id="envHint"></small></span></label>
+      </div>
+      <button class="go accent" id="goBtn">추첨 시작</button>
+      <div class="optrow">
+        <span class="chips"><button class="ghost" id="fastBtn" aria-pressed="false">빠르게</button><button class="ghost" id="soundBtn" aria-pressed="true">소리 켜짐</button></span>
+        <button class="ghost" id="reviewNow">애니메이션 없이 결과 보기</button>
+      </div>
       <details id="eqDetails"><summary>실험 설정 · 기록용 분류</summary><div class="block" id="eqBox">
         <div class="eq"><span class="eq-l">추첨기</span><div class="chips" id="hogiSel"></div></div>
         <div class="eq"><span class="eq-l">볼세트</span><div class="chips" id="setSel"></div></div>
         <p class="note" id="eqNote"></p>
-      </div>
-      </details>
-      <div class="optrow" id="drawOpts">
-        <label class="switch"><input type="checkbox" id="envOpt"><span class="tr"></span><span>전회차와 같은 결과에서 이어 뽑기<small id="envHint"></small></span></label>
-      </div>
-      <button class="go" id="goBtn">추첨 시작</button>
-      <div class="optrow">
-        <button class="ghost" id="fastBtn" aria-pressed="false">빠르게</button>
-        <button class="ghost" id="soundBtn" aria-pressed="true">소리 켜짐</button>
-      </div>
+      </div></details>
     </div>
-
-    <div class="block" id="drawLog">
+    <div class="card block" id="rvBlock" hidden>
+      <div id="rvSum"></div>
+      <div id="rvLines"></div>
+    </div>
+    <div class="card block" id="drawLog">
       <div class="block-head"><h2 id="logTitle"></h2><span class="muted" id="logNote"></span></div>
       <div id="logList"></div>
     </div>
-
-    <div class="block" id="flowBlock">
+    <div class="card block" id="flowBlock">
       <div class="block-head"><h2 id="flowTitle"></h2><span class="muted" id="flowNote"></span></div>
       <div class="chips" id="flowWho"></div>
       <div class="heat" id="heat"></div>
       <p class="note" id="flowTop"></p>
     </div>
-
-    <div class="block" id="rvBlock" hidden>
-      <button class="ghost review-now" id="reviewNow">애니메이션 없이 결과 보기</button><div id="rvSum"></div>
-      <div id="rvLines"></div>
-    </div>
-
-    <div class="block" id="markBlock" hidden>
-      <div class="block-head"><h2 id="markTitle"></h2><span class="muted" id="markNote"></span></div>
-      <div id="markWarn"></div>
-      <div id="markPapers"></div>
-      <div id="markTotal"></div>
-      <div id="buyBox"></div>
-    </div>
   </section>
 
-  <section class="view" id="v-dash" hidden>
-    <div class="week-card" id="weekCard"></div>
-    <div class="block">
-      <div class="block-head"><h2>누적 기록</h2><span class="muted" id="dashRange"></span></div>
+  <!-- 로또 · 기록 -->
+  <section class="view" id="lv-stats" hidden>
+    <div class="all" id="lAll"></div>
+    <div class="card block">
+      <div class="block-head"><h2>로또 누적</h2><span class="muted" id="dashRange"></span></div>
       <div class="kpis" id="kpis"></div>
       <p class="note">당첨금은 공식 세전 금액을 바탕으로 계산한 세후 추정액입니다. 실제 지급명세와 원단위 차이가 있을 수 있습니다.</p>
     </div>
-    <div class="block">
-      <h2>회차별 성적</h2>
-      <div class="tw"><table id="roundTbl"></table></div>
-    </div>
-    <div class="block">
+    <div class="card block"><h2>회차별 성적</h2><div class="tw"><table id="roundTbl"></table></div></div>
+    <div class="card block">
       <h2>번호가 몇 개씩 맞았나</h2>
-      <div class="legend"><span><i style="background:var(--teal)"></i>실제</span><span><i style="background:var(--line)"></i>무작위로 샀을 때 기대</span></div>
+      <div class="legend"><span><i style="background:var(--teal)"></i>실제</span><span><i style="background:var(--card-line)"></i>무작위로 샀을 때 기대</span></div>
       <div class="dist" id="dist"></div>
       <p class="note" id="distNote"></p>
     </div>
-    <div class="block">
-      <h2>방식별 성적</h2>
-      <div class="tw"><table id="grpTbl"></table></div>
-    </div>
-    <div class="block">
-      <h2>추첨기로 뽑은 번호</h2>
-      <div class="tw"><table id="drawTbl"></table></div>
-    </div>
+    <div class="card block"><h2>방식별 성적</h2><div class="tw"><table id="grpTbl"></table></div></div>
+    <div class="card block"><h2>추첨기로 뽑은 번호</h2><div class="tw"><table id="drawTbl"></table></div></div>
     <p class="note"><span class="sync" id="syncNote"><i></i><span></span></span></p>
+  </section>
+
+  <!-- 연금 · 이번 주 -->
+  <section class="view" id="pv-week" hidden>
+    <div class="hero" id="pWeekCard"></div>
+    <div class="card last" id="pLastCard" hidden></div>
+    <div class="card block">
+      <div class="block-head"><h2 id="pMarkTitle"></h2><span class="muted" id="pMarkNote"></span></div>
+      <div id="pTickets"></div>
+      <div id="pTotal"></div>
+      <div id="pBuyBox"></div>
+    </div>
+  </section>
+
+  <!-- 연금 · 결과 -->
+  <section class="view" id="pv-review" hidden>
+    <div class="pills" id="pPills" aria-label="결과 볼 회차"></div>
+    <div class="card block" id="pResult"></div>
+    <div class="card block" id="pLines"></div>
+  </section>
+
+  <!-- 연금 · 기록 -->
+  <section class="view" id="pv-stats" hidden>
+    <div class="all" id="pAll"></div>
+    <div class="card block">
+      <div class="block-head"><h2>연금 누적</h2><span class="muted" id="pRange"></span></div>
+      <div class="kpis" id="pKpis"></div>
+      <p class="note">3~7등은 200만원 이하라 세금이 없습니다. 1·2등·보너스는 매달 나눠 받는 연금식이라 손익 합계에는 넣지 않고 따로 표시합니다.</p>
+    </div>
+    <div class="card block"><h2>회차별 성적</h2><div class="tw"><table id="pTbl"></table></div></div>
+    <div class="card block">
+      <h2>등수 기준</h2>
+      <div class="tw"><table><thead><tr><th>등수</th><th class="l">맞춰야 하는 것</th><th>당첨금</th></tr></thead><tbody>
+        <tr><td>1등</td><td class="l">조 + 6자리 전부</td><td>월 700만원 × 20년</td></tr>
+        <tr><td>2등</td><td class="l">6자리 전부 (다른 조)</td><td>월 100만원 × 10년</td></tr>
+        <tr><td>보너스</td><td class="l">보너스 6자리 (조 상관없음)</td><td>월 100만원 × 10년</td></tr>
+        <tr><td>3등</td><td class="l">끝 5자리</td><td>100만원</td></tr>
+        <tr><td>4등</td><td class="l">끝 4자리</td><td>10만원</td></tr>
+        <tr><td>5등</td><td class="l">끝 3자리</td><td>5만원</td></tr>
+        <tr><td>6등</td><td class="l">끝 2자리</td><td>5천원</td></tr>
+        <tr><td>7등</td><td class="l">끝 1자리</td><td>1천원</td></tr>
+      </tbody></table></div>
+      <p class="note">1등·2등·보너스 금액은 세전입니다. 연금식 당첨금은 매달 22% 원천징수됩니다.</p>
+    </div>
   </section>
 </div>
 
+<nav class="tabbar" id="tabbar" hidden>
+  <div class="in">
+    <button data-t="week"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>이번 주</button>
+    <button data-t="draw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="11" r="7.5"/><circle cx="10" cy="9.5" r="1.6"/><circle cx="14.2" cy="12.5" r="1.6"/><path d="M8.5 20.5h7"/></svg>추첨</button>
+    <button data-t="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5a2.5 3 0 0 0 3 3.6M17 6h2.5a2.5 3 0 0 1-3 3.6M12 14v3.5M8.5 20.5h7"/></svg>결과</button>
+    <button data-t="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20.5h16"/><rect x="5.5" y="12" width="3" height="6" rx="1"/><rect x="10.5" y="7" width="3" height="11" rx="1"/><rect x="15.5" y="4" width="3" height="14" rx="1"/></svg>기록</button>
+  </div>
+</nav>
 <script>
 (()=>{
-const APP_VERSION='202611102000';
+const APP_VERSION='202611131200';
 const OWNER='warren0867',REPO='lotto-data',API=`https://api.github.com/repos/${OWNER}/${REPO}/contents/data/`;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -346,9 +444,9 @@ const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:
 
 /* ── GitHub 저장소: data/official.json · rounds.json · app_draws.json · purchases.json ── */
 let TOKEN=ls.get('lotto-gh-token')||'';
-const F={official:null,rounds:null,app_draws:null,purchases:null,flow:null},SHA={},ETAG={};
+const F={official:null,rounds:null,app_draws:null,purchases:null,flow:null,pension_official:null,pension_rounds:null,pension_fixed:null},SHA={},ETAG={};
 let syncState='', lastSync=0,writing=false;
-function message(t){$('appMessage').hidden=!t;$('appMessage').textContent=t}
+function message(t){$('appMessage').hidden=!t;$('appMessage').firstElementChild.textContent=t}
 const ready=()=>!!(F.official&&Object.keys(F.official).length&&F.rounds);
 try{const c=JSON.parse(ls.get('lotto-cache')||'null');if(c)Object.assign(F,c)}catch(e){}
 const b64d=s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g,'')),c=>c.charCodeAt(0)));
@@ -376,7 +474,7 @@ const cache=()=>ls.set('lotto-cache',JSON.stringify(F));
 async function syncAll(){
   if(!TOKEN){showSetup(true);return}
   if(writing||busy)return;
-  try{let ch=false;for(const n of ['official','rounds','app_draws','purchases','flow'])ch=(await ghGet(n).catch(e=>{if(n==='flow')return false;throw e}))||ch;
+  try{let ch=false;for(const n of ['official','rounds','app_draws','purchases','flow','pension_official','pension_rounds','pension_fixed'])ch=(await ghGet(n).catch(e=>{if(n==='flow'||n.startsWith('pension'))return false;throw e}))||ch;
     syncState='ok';lastSync=Date.now();if(ch)cache();renderAll();showSetup(false)}
   catch(e){syncState='err';renderSync();if(e.status===401||e.status===403||e.status===404)showSetup(true,'토큰을 확인해 주세요. lotto-data 저장소에 Contents 읽기·쓰기 권한이 있어야 합니다.')}
 }
@@ -385,7 +483,7 @@ async function write(name,mutate,msg){
   try{await ghEdit(name,mutate,msg);syncState='ok';lastSync=Date.now();renderAll();return true}
   catch(e){syncState='err';renderSync();message(e.message==='stale'?'다른 기기에서 번호가 변경됐습니다. 새로고침 후 마킹표를 다시 확인해 주세요.':'저장하지 못했습니다. 인터넷 연결을 확인하고 다시 눌러 주세요.');return false}
 }
-function showSetup(on,msg){$('setup').hidden=!on;if(msg)$('setupMsg').textContent=msg;if(!ready()){$('v-dash').hidden=true;$('v-draw').hidden=true}}
+function showSetup(on,msg){$('setup').hidden=!on;if(msg)$('setupMsg').textContent=msg;if(!ready()){document.querySelectorAll('section.view').forEach(s=>s.hidden=true);$('tabbar').hidden=true;$('gameSw').hidden=true}}
 $('copyUrl').onclick=async e=>{const t='https://github.com/settings/personal-access-tokens/new';try{await navigator.clipboard.writeText(t);e.currentTarget.textContent='복사됨'}catch(err){const r=document.createRange();r.selectNodeContents($('tokUrl'));getSelection().removeAllRanges();getSelection().addRange(r)}};
 $('tokenSave').onclick=async()=>{const t=$('tokenIn').value.trim();if(!t)return;TOKEN=t;ls.set('lotto-gh-token',t);$('tokenIn').value='';$('setupMsg').textContent='연결 중…';await syncAll()};
 
@@ -629,19 +727,15 @@ function setStage(){
   if(mode==='review'&&rvRound){$('stTitle').innerHTML=`제 <b>${rvRound}</b>회 복기`;$('stSub').textContent=`${DRAW[rvRound].hogi?DRAW[rvRound].hogi+'호기 · ':''}${DRAW[rvRound].d.replaceAll('-','.')} 추첨`}
   else{$('stTitle').innerHTML=`제 <b>${NEXT}</b>회 추첨`;$('stSub').textContent=`${selHogi||'-'}호기 · ${md(NEXT_DATE)}(토) 추첨 예정`}
 }
-function setMode(m){if(busy)newRun();busy=false;airT=0;cancelArm=false;mode=m;
-  $('trayLabel').textContent=m==='review'?'실제 당첨번호':'생성 번호';$('eqDetails').hidden=m!=='draw';
-  ['Draw','Review','Mark'].forEach(k=>$('m'+k).setAttribute('aria-pressed',m===k.toLowerCase()));
-  $('rvPills').hidden=m!=='review';$('drawOpts').hidden=m!=='draw';$('eqBox').hidden=m!=='draw';$('drawLog').hidden=m!=='draw';$('flowBlock').hidden=m!=='draw';$('rvBlock').hidden=m!=='review';
-  $('markBlock').hidden=m!=='mark';$('stageBox').hidden=m==='mark';$('ctlBox').hidden=m==='mark';
-  $('goBtn').disabled=false;$('goBtn').textContent=m==='draw'?'추첨 시작':'복기 시작';
-  if(m==='review'&&(!rvRound||!RV.includes(rvRound)))rvRound=RV[0];
-  setStage();resetBalls();trayEmpty();status(m==='draw'?'버튼을 누르면 송풍기가 돌기 시작합니다':'우리가 산 번호로 이 회차를 다시 추첨합니다');
-  if(m==='review'){renderPills();renderReview();if(!rvRound){$('goBtn').disabled=true;status('아직 복기할 구매 회차가 없습니다')}}
-  if(m==='mark')renderMark();
+function setMode(m){if(busy)newRun();busy=false;airT=0;cancelArm=false;mode=m;const d=m==='draw';
+  $('trayLabel').textContent=d?'생성 번호':'실제 당첨번호';
+  $('eqDetails').hidden=!d;$('drawOpts').hidden=!d;$('drawLog').hidden=!d;$('flowBlock').hidden=!d;$('rvPills').hidden=d;$('rvBlock').hidden=d;$('reviewNow').hidden=d;
+  $('goBtn').disabled=false;$('goBtn').textContent=d?'추첨 시작':'복기 시작';
+  if(!d&&(!rvRound||!RV.includes(rvRound)))rvRound=RV[0];
+  setStage();resetBalls();trayEmpty();status(d?'버튼을 누르면 송풍기가 돌기 시작합니다':'우리가 산 번호로 이 회차를 다시 추첨합니다');
+  if(!d){renderPills();renderReview();if(!rvRound){$('goBtn').disabled=true;status('아직 복기할 구매 회차가 없습니다')}}
 }
 $('reviewNow').onclick=()=>{if(!rvRound)return;newRun();busy=false;airT=0;shown=new Set(DRAW[rvRound].n);trayShow(DRAW[rvRound].n,DRAW[rvRound].b);grade(true);reviewSummary();$('goBtn').disabled=false;status('결과 확인 완료')};
-$('mDraw').onclick=()=>setMode('draw');$('mReview').onclick=()=>setMode('review');$('mMark').onclick=()=>setMode('mark');
 $('fastBtn').onclick=e=>{FAST=!FAST;e.currentTarget.setAttribute('aria-pressed',FAST)};
 $('soundBtn').onclick=e=>{soundOn=!soundOn;e.currentTarget.setAttribute('aria-pressed',soundOn);e.currentTarget.textContent=soundOn?'소리 켜짐':'소리 꺼짐';setHum(air)};
 
@@ -664,7 +758,7 @@ function grade(final){
     el.classList.toggle('win',!!k);el.querySelector('.r').textContent=k?`${k}등`:(final?'낙첨':(m?`${m}개`:'–'))});
 }
 function reviewSummary(){const s=roundStat(rvRound),net=s.prize-s.cost;
-  $('rvSum').innerHTML=`<div class="sum"><b>${s.prize?`${rankText(s.ranks)} · <span class="teal">세후 ${won(s.prize)}원</span>`:'전부 낙첨'}</b>
+  $('rvSum').innerHTML=`<div class="sum${s.prize?'':' lose'}"><b>${s.prize?`${rankText(s.ranks)} · <span class="teal">세후 ${won(s.prize)}원</span>`:'전부 낙첨'}</b>
     <span>${s.lines}줄 · ${won(s.cost)}원 구매 · 손익 ${net>0?'+':''}${won(net)}원 · 최고 ${s.best}개 일치</span></div>`}
 
 function renderMark(){
@@ -704,13 +798,27 @@ $('goBtn').onclick=async()=>{
   }
 };
 
-/* ── 대시보드 ── */
+/* ── 이번 주 (로또) ── */
+const dday=d=>{const t=new Date();t.setHours(0,0,0,0);const x=new Date(d);x.setHours(0,0,0,0);return Math.round((x-t)/864e5)};
+const ddayHtml=d=>{const n=dday(d);return n>0?`<span class="dday">D-${n}</span>`:n===0?'<span class="dday">오늘</span>':''};
 function renderWeek(){
   const R=ROUNDS[NEXT],G=R?.bought?R.g:markGroups(NEXT).g,all=G.flatMap(g=>g.l),on=G.filter(g=>g.online).flatMap(g=>g.l).length;
-  $('weekCard').innerHTML=`<div class="week-meta"><span class="muted">이번 주 · ${md(NEXT_DATE)} 토요일</span><span class="badge">${R?.bought?'구매 기록 완료':'구매 전'}</span></div><h2>${NEXT}회 준비</h2><div class="week-budget">${all.length}줄 <small>·</small> ${won(all.length*1000)}원</div><p class="muted">온라인 ${on}줄 · 오프라인 ${all.length-on}줄${NEXT===1250?' · 기본 구성 35줄':''}</p><div class="week-actions"><button class="go" id="weekMark">마킹표 보기 →</button><button class="ghost" id="weekReview">최근 결과 보기</button></div>`;
-  $('weekMark').onclick=()=>{show('draw');setMode('mark');history.replaceState(null,'','#draw');window.scrollTo(0,0)};
-  $('weekReview').disabled=!RV.length;$('weekReview').onclick=()=>{history.replaceState(null,'','#draw');rvRound=RV[0];show('draw');setMode('review');$('reviewNow').click();window.scrollTo(0,0)};
+  let paper=0;G.filter(g=>!g.online).forEach(g=>paper+=Math.ceil(g.l.length/5));
+  $('weekCard').innerHTML=`<div class="hero-top"><span>로또 6/45 · <b>제 ${NEXT}회</b></span><span class="badge${R?.bought?' ok':''}">${R?.bought?'구매 완료':'구매 전'}</span></div>
+    <div class="hero-when">${md(NEXT_DATE)}(토) 20:35 추첨 ${ddayHtml(NEXT_DATE)}</div>
+    <div class="hero-amt">${all.length}줄<small>${won(all.length*1000)}원</small></div>
+    <div class="hero-sub">${all.length?`온라인 ${on}줄 · 판매점 ${all.length-on}줄 (용지 ${paper}장)`:'아직 이번 주 번호가 없습니다'}</div>`;
+  const e=RV[0];$('lastCard').hidden=!e;if(!e)return;
+  const s=roundStat(e),d=DRAW[e];
+  $('lastCard').innerHTML=`<div class="last-h"><h2>지난 ${e}회 결과</h2><span class="muted">${d.d.slice(5).replace('-','.')}(토)</span></div>
+    <div class="balls">${d.n.map(n=>ballHtml(n,'sm')).join('')}<span class="plus" style="color:var(--faint)">+</span>${ballHtml(d.b,'sm')}</div>
+    <div class="last-res">${s.prize?`<span class="chip win">${rankText(s.ranks)}</span>세후 ${won(s.prize)}원`:`<span class="chip">전부 낙첨</span><span class="muted">최고 ${s.best}개 일치 · ${s.lines}줄</span>`}</div>
+    <button class="link" id="lastGo">번호별로 자세히</button>`;
+  $('lastGo').onclick=()=>{rvRound=e;go('lotto','review');setMode('review');$('reviewNow').click()};
 }
+
+/* ── 기록 (로또) ── */
+let LT={cost:0,prize:0};
 function renderDash(){
   let cost=0,prize=0,lines=0,rows='';const allRanks=[],dist=[0,0,0,0,0,0,0],cat={};
   RV.forEach(e=>{const s=roundStat(e),d=DRAW[e],net=s.prize-s.cost;cost+=s.cost;prize+=s.prize;lines+=s.lines;allRanks.push(...s.ranks);
@@ -719,7 +827,7 @@ function renderDash(){
     rows+=`<tr><td>${e}</td><td>${d.d.slice(5).replace('-','.')}</td><td>${d.hogi||'–'}</td><td>${s.lines}</td><td>${won(s.cost)}</td><td>${s.best}</td><td${s.prize?' class="w"':''}>${rankText(s.ranks)||'–'}</td><td${s.prize?' class="w"':''}>${s.prize?won(s.prize):'–'}</td><td class="${net<0?'neg':'w'}">${net>0?'+':''}${won(net)}</td></tr>`});
   const skipped=Object.values(ROUNDS).filter(r=>!r.bought&&r.note&&DRAW[r.e]).map(r=>r.e);
   if(skipped.length)rows+=skipped.map(e=>`<tr><td>${e}</td><td>${DRAW[e].d.slice(5).replace('-','.')}</td><td>${DRAW[e].hogi||'–'}</td><td colspan="6" class="l" style="color:var(--faint)">구매하지 않음</td></tr>`).join('');
-  const net=prize-cost;
+  const net=prize-cost;LT={cost,prize};
   $('dashRange').textContent=RV.length?`${RV[RV.length-1]}~${RV[0]}회 · ${RV.length}회 구매`:'';
   $('kpis').innerHTML=[[`${won(cost)}원`,'구매액',''],[`${won(prize)}원`,'당첨금(세후 추정)','pos'],[`${net>0?'+':''}${won(net)}원`,'손익',net>=0?'pos':'neg'],[`${allRanks.length}장`,rankText(allRanks)||'당첨 없음','']]
     .map(([b,s,c])=>`<div class="kpi ${c}"><b>${b}</b><span>${s}</span></div>`).join('');
@@ -739,29 +847,143 @@ function renderDash(){
   renderSync();
 }
 function renderSync(){const el=$('syncNote');el.className='sync '+syncState;
-  el.lastElementChild.textContent=syncState==='ok'?`저장소와 연결됨 · ${hm(lastSync)} 기준 · 위쪽 새로고침으로 최신 기록 받기`:syncState==='err'?'저장소에 연결하지 못했습니다. 마지막으로 받은 기록을 보여 줍니다':'연결 전'}
+  el.lastElementChild.textContent=syncState==='ok'?`저장소와 연결됨 · ${hm(lastSync)} 기준 · 오른쪽 위 새로고침으로 최신 기록 받기`:syncState==='err'?'저장소에 연결하지 못했습니다. 마지막으로 받은 기록을 보여 줍니다':'연결 전'}
 
-function renderHeader(){if(!LAST)return;const at=new Date(NEXT_DATE);at.setHours(20,35,0,0);const today=new Date();today.setHours(0,0,0,0);const day=new Date(NEXT_DATE);day.setHours(0,0,0,0);const days=Math.round((day-today)/864e5);
-  $('nextInfo').innerHTML=`다음 추첨 <b>${NEXT}회</b> · ${md(NEXT_DATE)}(토) 20:35${days>0?` · D-${days}`:''}`;
-  $('envHint').textContent=`${LAST}회 당첨번호가 나올 때까지 돌린 뒤 이어서 뽑습니다`}
-function renderAll(){if(!ready())return;recompute();renderWeek();show(location.hash.slice(1));renderHeader();renderEq();if(!busy)setStage();renderLog();renderFlow();renderDash();
-  if(mode==='mark')renderMark();if(mode==='review'&&!busy)renderPills()}
+/* ── 연금복권720+ : 조(1~5) + 6자리, 끝자리부터 맞춰 등수 ── */
+const POFF={},PRD={};let PLAST=0,PNEXT=0,PNEXT_DATE=new Date(),PRV=[],pRv=null,PALT={},paltRound=0,pCancelArm=false,PT={cost:0,prize:0,ann:[]};
+const pDateOf=i=>{const t=new Date('2020-05-07T00:00:00');t.setDate(t.getDate()+7*(i-1));return t};
+const sufOf=(a,b)=>{let k=0;while(k<6&&a[5-k]===b[5-k])k++;return k};
+const pRank=(n,jo,d)=>{if(n===d.b)return 'B';const k=sufOf(n,d.n);return k===6?(jo===d.jo?1:2):k?8-k:0};
+const P_CASH={3:1e6,4:1e5,5:5e4,6:5e3,7:1e3},P_ANN={1:'월 700만원×20년',2:'월 100만원×10년',B:'월 100만원×10년'};
+const pName=k=>k==='B'?'보너스':k+'등';
+const pOrder=k=>k==='B'?2.5:+k;
+const pRankText=ks=>{const c={};ks.forEach(k=>c[k]=(c[k]||0)+1);return Object.keys(c).sort((a,b)=>pOrder(a)-pOrder(b)).map(k=>`${pName(k)} ${c[k]}장`).join(' · ')};
+const pCount=ts=>ts.reduce((s,t)=>s+t.jo.length,0);
+const pReady=()=>Object.keys(F.pension_official||{}).length>0;
+function precompute(){
+  for(const o of [POFF,PRD])for(const k in o)delete o[k];
+  for(const [e,x] of Object.entries(F.pension_official||{}))POFF[+e]=x;
+  for(const [e,x] of Object.entries(F.pension_rounds||{}))PRD[+e]=x;
+  PLAST=Math.max(0,...Object.keys(POFF).map(Number));PNEXT=PLAST+1;PNEXT_DATE=pDateOf(PNEXT);
+  PRV=Object.keys(PRD).map(Number).filter(e=>POFF[e]&&PRD[e].bought&&PRD[e].tickets?.length).sort((a,b)=>b-a);
+  if(paltRound!==PNEXT){paltRound=PNEXT;try{PALT=JSON.parse(ls.get('gz-palt-'+PNEXT)||'{}')}catch(e){PALT={}}}
+}
+function pTickets(e){const R=PRD[e];if(R?.bought)return R.tickets||[];
+  return (R?.tickets||F.pension_fixed?.tickets||[]).map((t,i)=>PALT[i]>=0&&t.alt?.[PALT[i]]?{t:t.t,n:t.alt[PALT[i]],jo:t.jo,orig:t.n}:t)}
+function pScore(e){const d=POFF[e],ts=PRD[e].tickets;let prize=0,best=0;const ranks=[];
+  ts.forEach(t=>{best=Math.max(best,sufOf(t.n,d.n));t.jo.forEach(j=>{const k=pRank(t.n,j,d);if(k){ranks.push(k);prize+=P_CASH[k]||0}})});
+  const count=pCount(ts);return{prize,best,ranks,count,cost:count*1000}}
+const joHtml=(jo,hit=[])=>`<span class="jo" aria-label="${jo.join(',')}조">${[1,2,3,4,5].map(j=>`<i class="${hit.includes(j)?'won':jo.includes(j)?'on':''}">${j}</i>`).join('')}</span>`;
+const dgHtml=(n,{hit=0,bon=false,cls=''}={})=>`<div class="dg ${cls}">${[...n].map((c,i)=>`<span class="${bon?'bon':hit&&i>=6-hit?'hit':''}">${c}</span>`).join('')}</div>`;
+const pSumHtml=s=>{const net=s.prize-s.cost,ann=s.ranks.filter(k=>P_ANN[k]);
+  return `<div class="sum${s.ranks.length?'':' lose'}"><b>${s.ranks.length?`${pRankText(s.ranks)}${s.prize?` · <span class="teal">${won(s.prize)}원</span>`:''}`:'전부 낙첨'}</b>
+    <span>${ann.length?ann.map(k=>`${pName(k)} ${P_ANN[k]}`).join(' · ')+' · ':''}${s.count}장 · ${won(s.cost)}원 구매 · 손익 ${net>0?'+':''}${won(net)}원 · 최고 끝 ${s.best}자리 일치</span></div>`};
 
-/* ── 탭 ── */
-function show(t){if(!['dash','draw'].includes(t))t='dash';
-  document.querySelectorAll('nav a').forEach(a=>a.dataset.t===t?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current'));
-  $('v-dash').hidden=t!=='dash'||!ready();$('v-draw').hidden=t!=='draw'||!ready();
-  if(t==='dash'&&busy){newRun();busy=false;airT=0;$('goBtn').disabled=false}}
-document.querySelectorAll('nav a').forEach(a=>a.onclick=e=>{e.preventDefault();history.replaceState(null,'','#'+a.dataset.t);show(a.dataset.t)});
+function renderPWeek(){
+  if(!pReady()){$('pWeekCard').innerHTML='<div class="hero-top"><span>연금복권720+</span></div><div class="hero-amt">준비 중</div><div class="hero-sub">오른쪽 위 새로고침을 누르면 연금 기록을 받아옵니다</div>';$('pLastCard').hidden=true;$('pTickets').innerHTML='';$('pTotal').innerHTML='';$('pBuyBox').innerHTML='';return}
+  const e=PNEXT,R=PRD[e],bought=!!R?.bought,ts=pTickets(e),cnt=pCount(ts);
+  $('pWeekCard').innerHTML=`<div class="hero-top"><span>연금복권720+ · <b>제 ${e}회</b></span><span class="badge${bought?' ok':''}">${bought?'구매 완료':'구매 전'}</span></div>
+    <div class="hero-when">${md(PNEXT_DATE)}(목) 19:05 추첨 ${ddayHtml(PNEXT_DATE)}</div>
+    <div class="hero-amt">${cnt}장<small>${won(cnt*1000)}원</small></div>
+    <div class="hero-sub">번호 ${ts.length}개 · 조마다 1장씩</div>`;
+  const le=PRV[0];$('pLastCard').hidden=!le;
+  if(le){const s=pScore(le),d=POFF[le];
+    $('pLastCard').innerHTML=`<div class="last-h"><h2>지난 ${le}회 결과</h2><span class="muted">${d.date.slice(5).replace('-','.')}(목)</span></div>
+      <div style="display:flex;gap:8px;align-items:center"><span class="chip win">${d.jo}조</span>${dgHtml(d.n,{cls:'sm win'})}</div>
+      <div class="last-res">${s.ranks.length?`<span class="chip win">${pRankText(s.ranks)}</span>${s.prize?won(s.prize)+'원':''}`:`<span class="chip">전부 낙첨</span><span class="muted">최고 끝 ${s.best}자리 · ${s.count}장</span>`}</div>
+      <button class="link" id="pLastGo">번호별로 자세히</button>`;
+    $('pLastGo').onclick=()=>{pRv=le;go('pension','review')}}
+  $('pMarkTitle').textContent=`${e}회 구매표`;$('pMarkNote').textContent=bought?'산 번호':'이대로 사면 됩니다';
+  $('pTickets').innerHTML=ts.length?ts.map((t,i)=>{
+    const base=(R?.tickets||F.pension_fixed?.tickets||[])[i]||{},alt=!bought&&base.alt?.length?base.alt:null,a=PALT[i]??-1;
+    const altRow=alt?`<div class="alt">${a>=0?`매진 대체 <b>${a+1}/${alt.length}</b> · 원래 ${base.n}`:'매진이면 뒤 5자리는 두고 앞자리만 바꿉니다'}
+      <button class="ghost" data-alt="${i}"${a>=alt.length-1?' disabled':''}>${a>=0?(a>=alt.length-1?'대체 번호 끝':'또 매진 · 다음 번호'):'매진 · 앞자리 바꾸기'}</button>${a>=0?`<button class="ghost" data-reset="${i}">원래 번호로</button>`:''}</div>`:'';
+    return `<div class="tk"><div class="tk-h"><span class="tk-t">${esc(t.t)}${t.orig?`<span class="chip">대체 · 원래 ${t.orig}</span>`:''}</span><span class="muted">${t.jo.length===5?'1~5조 전부':t.jo.map(j=>j+'조').join('·')} · ${t.jo.length}장</span></div>
+      ${dgHtml(t.n)}${joHtml(t.jo)}${altRow}</div>`}).join(''):'<p class="empty">이번 회차 구매표가 없습니다.</p>';
+  $('pTickets').querySelectorAll('[data-alt]').forEach(b=>b.onclick=()=>{const i=+b.dataset.alt;PALT[i]=(PALT[i]??-1)+1;ls.set('gz-palt-'+e,JSON.stringify(PALT));renderPWeek()});
+  $('pTickets').querySelectorAll('[data-reset]').forEach(b=>b.onclick=()=>{delete PALT[+b.dataset.reset];ls.set('gz-palt-'+e,JSON.stringify(PALT));renderPWeek()});
+  $('pTotal').innerHTML=`<div class="total"><span>합계 <b>${cnt}장 · ${won(cnt*1000)}원</b></span><span class="muted">번호 ${ts.length}개</span></div>`;
+  if(bought){$('pBuyBox').innerHTML=`<div class="done"><b>구매 완료${R.boughtAt?' · '+mdhm(R.boughtAt):''}</b><span class="muted">${cnt}장 · ${won(cnt*1000)}원. 목요일 추첨이 끝나면 결과와 기록에 반영됩니다.</span>
+      <div class="row"><button class="ghost" id="pCancel">${pCancelArm?'한 번 더 누르면 완료 표시 취소':'구매 완료 표시 취소'}</button></div></div>`;
+    $('pCancel').onclick=async()=>{if(!pCancelArm){pCancelArm=true;renderPWeek();return}pCancelArm=false;await cancelPension(e)}}
+  else{$('pBuyBox').innerHTML=`<button class="go accent" id="pBuyBtn"${cnt?'':' disabled'}>구매 완료로 기록</button><p class="note" style="margin-top:10px">실제 복권을 산 뒤 눌러 주세요. 매진으로 바꾼 번호도 그대로 기록됩니다.</p>`;
+    $('pBuyBtn').onclick=async()=>{$('pBuyBtn').disabled=true;await savePension(e,ts)}}
+}
+async function savePension(e,ts){
+  if(writing)return;writing=true;message('연금 구매 기록 저장 중…');
+  const at=Date.now(),cnt=pCount(ts),tickets=ts.map(t=>({t:t.t,n:t.n,jo:t.jo,...(t.orig?{orig:t.orig}:{})}));
+  try{const ok=await write('pension_rounds',r=>{r=r||{};if(r[e]?.bought)throw new Error('stale');
+      r[e]={...(r[e]||{}),date:pDateOf(e).toISOString().slice(0,10),tickets,bought:true,boughtAt:at,purchase:{at,count:cnt,amount:cnt*1000}};return r},`연금 ${e}회 구매 완료 ${cnt}장`);
+    if(ok){message('연금 구매 기록을 저장했습니다.');ls.set('gz-palt-'+e,'{}');PALT={}}}
+  finally{writing=false;renderPWeek()}
+}
+async function cancelPension(e){
+  if(writing)return;writing=true;
+  try{if(await write('pension_rounds',r=>{if(r?.[e]){r[e].bought=false;delete r[e].boughtAt;delete r[e].purchase}return r},`연금 ${e}회 구매 기록 취소`))message('구매 완료 표시를 취소했습니다.')}
+  finally{writing=false;renderPWeek()}
+}
+function renderPReview(){
+  if(!PRV.length){$('pPills').innerHTML='';$('pResult').innerHTML='<p class="empty">아직 결과가 나온 구매 회차가 없습니다.</p>';$('pLines').hidden=true;return}
+  if(!pRv||!PRV.includes(pRv))pRv=PRV[0];$('pLines').hidden=false;
+  $('pPills').innerHTML=PRV.map(e=>`<button data-e="${e}" aria-pressed="${e===pRv}">${e}회${pScore(e).ranks.length?'<span class="w" aria-label="당첨"></span>':''}</button>`).join('');
+  $('pPills').querySelectorAll('button').forEach(b=>b.onclick=()=>{pRv=+b.dataset.e;renderPReview()});
+  const d=POFF[pRv],s=pScore(pRv);
+  $('pResult').innerHTML=`<div class="block-head"><h2>${pRv}회 당첨번호</h2><span class="muted">${d.date.replaceAll('-','.')}(목)</span></div>
+    <div class="pres"><div class="pres-row"><span class="l">1등</span><div style="display:flex;gap:8px;align-items:center"><span class="chip win">${d.jo}조</span>${dgHtml(d.n,{cls:'sm win'})}</div></div>
+    <div class="pres-row"><span class="l">보너스</span><div style="display:flex;gap:8px;align-items:center"><span class="chip">각 조</span>${dgHtml(d.b,{cls:'sm'})}</div></div></div>${pSumHtml(s)}`;
+  $('pLines').innerHTML='<h2>우리 번호</h2><div>'+PRD[pRv].tickets.map(t=>{const k=sufOf(t.n,d.n),bon=t.n===d.b,rk=t.jo.map(j=>pRank(t.n,j,d)).filter(Boolean),hitJ=t.jo.filter(j=>pRank(t.n,j,d));
+    return `<div class="tk"><div class="tk-h"><span class="tk-t">${esc(t.t)}${t.orig?`<span class="chip">대체</span>`:''}</span><span class="tk-r${rk.length?' win':''}">${rk.length?pRankText(rk):'낙첨'}</span></div>
+      ${dgHtml(t.n,{hit:k,bon})}<div class="tk-h">${joHtml(t.jo,hitJ)}<span class="muted">${bon?'보너스 번호 일치':k?`끝 ${k}자리 일치`:'끝자리부터 불일치'}</span></div></div>`}).join('')+'</div>';
+}
+function renderPStats(){
+  let cost=0,prize=0,rows='';const ranks=[];
+  PRV.forEach(e=>{const s=pScore(e),d=POFF[e],net=s.prize-s.cost;cost+=s.cost;prize+=s.prize;ranks.push(...s.ranks);
+    rows+=`<tr><td>${e}</td><td>${d.date.slice(5).replace('-','.')}</td><td>${d.jo}조 ${d.n}</td><td>${s.count}</td><td>${won(s.cost)}</td><td>끝 ${s.best}</td><td${s.ranks.length?' class="w"':''}>${pRankText(s.ranks)||'–'}</td><td class="${net<0?'neg':'w'}">${net>0?'+':''}${won(net)}</td></tr>`});
+  const net=prize-cost;PT={cost,prize,ann:ranks.filter(k=>P_ANN[k])};
+  $('pRange').textContent=PRV.length?`${PRV[PRV.length-1]}~${PRV[0]}회 · ${PRV.length}회 구매`:'';
+  $('pKpis').innerHTML=[[`${won(cost)}원`,'구매액',''],[`${won(prize)}원`,'당첨금(3~7등)','pos'],[`${net>0?'+':''}${won(net)}원`,'손익',net>=0?'pos':'neg'],[`${ranks.length}장`,pRankText(ranks)||'당첨 없음','']]
+    .map(([b,s,c])=>`<div class="kpi ${c}"><b>${b}</b><span>${s}</span></div>`).join('');
+  $('pTbl').innerHTML=`<thead><tr><th>회차</th><th>추첨일</th><th>1등 번호</th><th>장</th><th>구매액</th><th>최고</th><th>당첨</th><th>손익</th></tr></thead><tbody>${rows||'<tr><td colspan="8" class="l" style="color:var(--faint);padding:16px 4px">구매 기록이 쌓이면 여기 회차별로 보입니다.</td></tr>'}</tbody>`;
+}
+function renderTotals(){const c=LT.cost+PT.cost,p=LT.prize+PT.prize,n=p-c;
+  const h=`<div><span>로또 + 연금 전체 손익</span><br><b class="${n<0?'neg':'pos'}">${n>0?'+':''}${won(n)}원</b></div><div style="text-align:right"><span>구매 ${won(c)}원</span><br><span>당첨 ${won(p)}원${PT.ann.length?` + 연금식 ${PT.ann.length}건`:''}</span></div>`;
+  $('lAll').innerHTML=h;$('pAll').innerHTML=h}
+
+/* ── 화면 전환: 상단 로또/연금, 하단 이번 주·추첨·결과·기록 ── */
+let GAME=ls.get('gz-game')==='pension'?'pension':'lotto',TAB='week';
+const TABS={lotto:['week','draw','review','stats'],pension:['week','review','stats']};
+function readHash(){const h=location.hash.slice(1),m=h.match(/^(lotto|pension)-(\w+)$/);
+  if(m){GAME=m[1];TAB=m[2]}else if(h==='dash'){GAME='lotto';TAB='stats'}else TAB='week'; // 예전 주소(#draw)로 열어도 이번 주 화면부터
+  if(!TABS[GAME].includes(TAB))TAB='week'}
+function go(g,t){GAME=g;TAB=TABS[g].includes(t)?t:'week';ls.set('gz-game',g);history.replaceState(null,'','#'+GAME+'-'+TAB);show();window.scrollTo(0,0)}
+function show(){
+  document.body.dataset.game=GAME;
+  $('gameSw').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.g===GAME));
+  $('tabbar').querySelectorAll('button').forEach(b=>{b.hidden=!TABS[GAME].includes(b.dataset.t);b.dataset.t===TAB?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
+  const ok=ready();$('tabbar').hidden=!ok;$('gameSw').hidden=!ok;
+  const want=GAME==='lotto'?(TAB==='week'?'lv-week':TAB==='stats'?'lv-stats':'v-draw'):'pv-'+TAB;
+  document.querySelectorAll('section.view').forEach(s=>s.hidden=!ok||s.id!==want);
+  if(want!=='v-draw'&&busy){newRun();busy=false;airT=0;$('goBtn').disabled=false}
+  if(want==='v-draw'&&mode!==TAB)setMode(TAB);
+}
+$('gameSw').querySelectorAll('button').forEach(b=>b.onclick=()=>go(b.dataset.g,TAB==='draw'?'week':TAB));
+$('tabbar').querySelectorAll('button').forEach(b=>b.onclick=()=>go(GAME,b.dataset.t));
+addEventListener('hashchange',()=>{readHash();show()});
+$('appMessage').querySelector('.x').onclick=()=>message('');
+
+function renderHeader(){if(!LAST)return;$('envHint').textContent=`${LAST}회 당첨번호가 나올 때까지 돌린 뒤 이어서 뽑습니다`}
+function renderAll(){if(!ready())return;recompute();precompute();renderHeader();renderWeek();renderMark();renderEq();if(!busy)setStage();renderLog();renderFlow();renderDash();
+  renderPWeek();renderPReview();renderPStats();renderTotals();show();if(mode==='review'&&!busy)renderPills()}
 
 /* ── 새로고침 버튼: 기록을 다시 받고, 앱 새 버전이 있으면 다시 연다 ── */
-$('refreshBtn').onclick=async e=>{if(busy||writing){message('진행 중인 추첨·저장이 끝나면 새로고침해 주세요.');return}const b=e.currentTarget;b.disabled=true;b.textContent='확인 중…';
+$('refreshBtn').onclick=async e=>{if(busy||writing){message('진행 중인 추첨·저장이 끝나면 새로고침해 주세요.');return}const b=e.currentTarget;b.disabled=true;b.classList.add('spin');
   try{const r=await fetch('version.json?'+Date.now(),{cache:'no-store'});const v=(await r.json()).v;if(v&&v!==APP_VERSION&&!busy){location.reload();return}}catch(err){}
-  await syncAll();const pending=ls.get('lotto-pending-draw');if(pending){try{if(await addDraw(JSON.parse(pending))){ls.set('lotto-pending-draw','');message('임시 보관된 추첨 기록을 저장했습니다.')}}catch(err){message('임시 기록을 확인하지 못했습니다.')}}b.disabled=false;b.textContent='새로고침'};
+  await syncAll();const pending=ls.get('lotto-pending-draw');if(pending){try{if(await addDraw(JSON.parse(pending))){ls.set('lotto-pending-draw','');message('임시 보관된 추첨 기록을 저장했습니다.')}}catch(err){message('임시 기록을 확인하지 못했습니다.')}}b.disabled=false;b.classList.remove('spin')};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 
-if(F.official&&F.rounds){recompute();renderHeader()}
-setMode('draw');renderAll();show(location.hash.slice(1));syncAll();
+readHash();
+if(F.official&&F.rounds){recompute();precompute();renderHeader()}
+setMode('draw');renderAll();show();syncAll();
 })();
 </script>
 </body>
