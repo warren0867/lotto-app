@@ -194,6 +194,23 @@ summary{cursor:pointer;font-size:14px;font-weight:700}details[open]>summary{marg
 .game .k{font-weight:800;color:var(--faint);font-size:15px}
 .game .big{display:flex;justify-content:space-between;font-size:clamp(20px,6vw,26px);font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
 .game .big span{min-width:1.6em;text-align:center}
+/* 마킹 진행: 칠한 줄은 눌러서 흐리게 */
+.mk-tools{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 10px;font-size:12.5px;color:var(--muted)}
+.mk-sw{display:inline-grid;grid-template-columns:1fr 1fr;background:var(--seg);border-radius:10px;padding:3px}
+.mk-sw button{border:0;background:none;font:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
+.mk-sw button.on{background:var(--card);color:var(--fg);box-shadow:var(--shadow)}
+[data-mk]{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s}
+[data-mk].done{opacity:.3}
+.game.done .k::after{content:" ✓";color:var(--teal)}
+.slips{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;padding:10px 0 14px;border-top:1px solid var(--line)}
+.slip-g{border:1px solid var(--line);border-radius:12px;padding:8px}
+.slip-h{display:flex;justify-content:space-between;align-items:baseline;font-weight:800;font-size:14px;margin:0 2px 6px}
+.slip-h span{font-weight:600;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.slip-g.done .slip-h b::after{content:" ✓ 칠함";color:var(--teal);font-size:12px}
+.slip-n{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.slip-n i{font-style:normal;aspect-ratio:1;display:grid;place-items:center;font-size:10.5px;color:var(--faint);border-radius:4px;font-variant-numeric:tabular-nums}
+.slip-n i.m{background:var(--fg);color:var(--bg);font-weight:800;font-size:11.5px}
+.tk.done .tk-t::after{content:"✓ 입력함";color:var(--teal);font-size:12px}
 .total{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;padding:14px 4px;border-top:1px solid var(--strong);border-bottom:1px solid var(--line);
   position:sticky;bottom:calc(var(--tabbar) + env(safe-area-inset-bottom,0px));background:var(--card);z-index:3}
 .total b{font-size:20px;font-weight:900}
@@ -451,7 +468,7 @@ td.neg{color:var(--red)}
 </nav>
 <script>
 (()=>{
-const APP_VERSION='202611132300';
+const APP_VERSION='202611140030';
 const OWNER='warren0867',REPO='lotto-data',API=`https://api.github.com/repos/${OWNER}/${REPO}/contents/data/`;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -872,16 +889,31 @@ function renderMark(){
   $('markTitle').textContent=`${e}회 마킹표`;
   $('markNote').textContent=`${md(NEXT_DATE)}(토) 추첨`;
   $('markWarn').innerHTML=!bought&&info.note?`<p class="warn">${esc(info.note)}</p>`:'';
-  let paper=0;const L='ABCDE';
-  $('markPapers').innerHTML=G.map(g=>{const chunks=[];for(let i=0;i<g.l.length;i+=5)chunks.push(g.l.slice(i,i+5));
+  let paper=0;const L='ABCDE',done=MK.get('L'+e);
+  $('markPapers').innerHTML=(G.length?`<div class="mk-tools"><div class="mk-sw" role="group" aria-label="마킹표 보기"><button data-mv="slip" class="${mkView==='slip'?'on':''}">용지 칸</button><button data-mv="num" class="${mkView==='num'?'on':''}">번호</button></div><span>칠한 줄을 누르면 흐려져요</span></div>`:'')+G.map(g=>{const chunks=[];for(let i=0;i<g.l.length;i+=5)chunks.push(g.l.slice(i,i+5));
     return chunks.map((c,ci)=>{const head=g.online?`온라인 · ${g.t}`:`용지 ${++paper} · ${g.t}${chunks.length>1?` (${ci+1}/${chunks.length})`:''}`;
       return `<div class="paper"><div class="paper-h">${esc(head)}<span${g.online?' class="on"':''}>${g.online?'동행복권 사이트':`${c.length}게임 · ${won(c.length*1000)}원`}</span></div>${
-        c.map((l,i)=>`<div class="game"><span class="k">${L[i]}</span><div class="big">${l.map(n=>`<span>${p2(n)}</span>`).join('')}</div></div>`).join('')}</div>`}).join('')}).join('');
+        mkView==='slip'?`<div class="slips">${c.map((l,i)=>{const k=mkKey(l);return `<div class="slip-g${done.has(k)?' done':''}" data-mk="${k}"><div class="slip-h"><b>${L[i]}</b><span>${l.map(p2).join(' ')}</span></div><div class="slip-n">${Array.from({length:45},(_,j)=>`<i${l.includes(j+1)?' class="m"':''}>${j+1}</i>`).join('')}</div></div>`}).join('')}</div>`
+        :c.map((l,i)=>{const k=mkKey(l);return `<div class="game${done.has(k)?' done':''}" data-mk="${k}"><span class="k">${L[i]}</span><div class="big">${l.map(n=>`<span>${p2(n)}</span>`).join('')}</div></div>`}).join('')}</div>`}).join('')}).join('');
   const all=G.flatMap(g=>g.l),on=G.filter(g=>g.online).flatMap(g=>g.l).length;
-  $('markTotal').innerHTML=`<div class="total"><span>합계 <b>${all.length}줄 · ${won(all.length*1000)}원</b></span><span class="muted">온라인 ${on}줄 · 오프라인 ${all.length-on}줄 (용지 ${paper}장)</span></div>`;
+  $('markTotal').innerHTML=`<div class="total"><span>합계 <b>${all.length}줄 · ${won(all.length*1000)}원</b></span><span class="muted">온라인 ${on}줄 · 오프라인 ${all.length-on}줄 (용지 ${paper}장)${all.length?` · 칠함 <b id="mkProg" style="font-size:inherit">${all.filter(l=>done.has(mkKey(l))).length}/${all.length}</b>`:''}</span></div>`;
   $('buyBox').innerHTML=`<div class="done"><b>${R?.skipped?'이번 회차 미구매':'전부 구매 기준'}</b><span class="muted">지정한 번호는 매회 전부 구매로 기록합니다. 다르게 샀거나 안 산 회차만 아래에서 수정하세요.</span></div>`;
   if(!lEditDirty)renderLEditor($('lEditDetails').open&&lEditRound?lEditRound:e);
 }
+
+/* 마킹 진행 체크: 이 기기에만 저장(회차별). 기록 저장소에는 쓰지 않음 */
+const MK={get(k){try{return new Set(JSON.parse(ls.get('gz-mk-'+k)||'[]'))}catch(_){return new Set()}},set(k,v){ls.set('gz-mk-'+k,JSON.stringify([...v]))}};
+const mkKey=l=>[...l].sort((a,b)=>a-b).join('.');
+let mkView=ls.get('gz-markview')==='num'?'num':'slip';
+function mkTap(ev,store,prog){
+  const sw=ev.target.closest('[data-mv]');if(sw){mkView=sw.dataset.mv;ls.set('gz-markview',mkView);renderMark();return}
+  if(ev.target.closest('button,a,input,select,summary'))return;
+  const el=ev.target.closest('[data-mk]');if(!el)return;
+  const v=MK.get(store),k=el.dataset.mk;v.has(k)?v.delete(k):v.add(k);MK.set(store,v);
+  ev.currentTarget.querySelectorAll(`[data-mk="${k}"]`).forEach(x=>x.classList.toggle('done',v.has(k)));
+  const all=ev.currentTarget.querySelectorAll('[data-mk]'),p=$(prog);if(p)p.textContent=`${[...all].filter(x=>x.classList.contains('done')).length}/${all.length}`}
+$('markPapers').addEventListener?.('click',ev=>mkTap(ev,'L'+NEXT,'mkProg'));
+$('pTickets').addEventListener?.('click',ev=>mkTap(ev,'P'+PNEXT,'pmkProg'));
 
 $('goBtn').onclick=async()=>{
   if(!ready()||busy||writing)return;
@@ -1031,11 +1063,12 @@ function renderPWeek(){
       <button class="link" id="pLastGo">번호별로 자세히</button>`;
     $('pLastGo').onclick=()=>{pRv=le;go('pension','review');setMode('preview');$('reviewNow').click()}}
   $('pMarkTitle').textContent=`${e}회 구매표`;$('pMarkNote').textContent=R?.skipped?'이번 회차 미구매':'매주 같은 번호 · 전부 구매 기준';
-  $('pTickets').innerHTML=ts.length?ts.map((t,i)=>{
+  const pdone=MK.get('P'+e),pk=t=>t.n+'-'+t.jo.join('');
+  $('pTickets').innerHTML=ts.length?`<div class="mk-tools"><span>동행복권에서 입력한 번호를 누르면 흐려져요</span></div>`+ts.map((t,i)=>{
     const altRow='';
-    return `<div class="tk"><div class="tk-h"><span class="tk-t">${esc(t.t)}${t.orig?`<span class="chip">대체 · 원래 ${t.orig}</span>`:''}</span><span class="muted">${t.jo.length===5?'1~5조 전부':t.jo.map(j=>j+'조').join('·')} · ${t.jo.length}장</span></div>
+    return `<div class="tk${pdone.has(pk(t))?' done':''}" data-mk="${pk(t)}"><div class="tk-h"><span class="tk-t">${esc(t.t)}${t.orig?`<span class="chip">대체 · 원래 ${t.orig}</span>`:''}</span><span class="muted">${t.jo.length===5?'1~5조 전부':t.jo.map(j=>j+'조').join('·')} · ${t.jo.length}장</span></div>
       ${dgHtml(t.n)}${joHtml(t.jo)}${altRow}</div>`}).join(''):'<p class="empty">이번 회차 구매표가 없습니다.</p>';
-  $('pTotal').innerHTML=`<div class="total"><span>합계 <b>${cnt}장 · ${won(cnt*1000)}원</b></span><span class="muted">번호 ${ts.length}개</span></div>`;
+  $('pTotal').innerHTML=`<div class="total"><span>합계 <b>${cnt}장 · ${won(cnt*1000)}원</b></span><span class="muted">번호 ${ts.length}개${ts.length?` · 입력함 <b id="pmkProg" style="font-size:inherit">${ts.filter(t=>pdone.has(pk(t))).length}/${ts.length}</b>`:''}</span></div>`;
   $('pBuyBox').innerHTML=`<div class="done"><b>${R?.skipped?'이번 회차 미구매':'매주 전부 구매로 기록'}</b><span class="muted">구매 확인은 필요 없습니다. 실제 번호·조·수량이 달라졌거나 안 산 회차만 아래에서 수정하세요. 수정은 이 회차에만 적용하고 다음 주 고정 번호는 유지합니다.</span></div>`;
 }
 async function savePension(e,ts,expected=pFingerprint(pBaseTickets(e))){
