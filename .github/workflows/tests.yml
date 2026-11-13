@@ -12,3 +12,4 @@ jobs:
       - run: node tests/core.test.cjs
       - run: node tests/pension.test.cjs
       - run: node tests/standing.test.cjs
+      - run: node tests/marking.test.cjs

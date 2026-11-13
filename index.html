@@ -194,29 +194,37 @@ summary{cursor:pointer;font-size:14px;font-weight:700}details[open]>summary{marg
 .game .k{font-weight:800;color:var(--faint);font-size:15px}
 .game .big{display:flex;justify-content:space-between;font-size:clamp(20px,6vw,26px);font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
 .game .big span{min-width:1.6em;text-align:center}
-/* 마킹 진행: 칠한 줄은 눌러서 흐리게 */
-.mk-tools{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 10px;font-size:12.5px;color:var(--muted)}
-.mk-sw{display:inline-grid;grid-template-columns:1fr 1fr;background:var(--seg);border-radius:10px;padding:3px}
-.mk-sw button{border:0;background:none;font:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
-.mk-sw button.on{background:var(--card);color:var(--fg);box-shadow:var(--shadow)}
-[data-mk]{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s}
-[data-mk].done{opacity:.3}
-.game.done .k::after{content:" ✓";color:var(--teal)}
+/* 마킹 상태는 구매 상태 카드(.done)와 분리한다. */
+.mk-tools,.mk-nav,.mk-session,.mk-summary{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.mk-tools{margin:4px 0 12px}.mk-tools .note{width:100%}
+.mk-sw{display:flex;flex-wrap:wrap;gap:4px}
+.mk-sw button,.mk-pages button,.mk-games button{border:1px solid var(--card-line);background:var(--card);color:var(--fg);font:inherit;font-size:13px;font-weight:700;padding:9px 11px;border-radius:10px;min-height:44px;cursor:pointer}
+.mk-sw button[aria-pressed=true],.mk-pages button[aria-current],.mk-games button[aria-current]{background:var(--fg);color:var(--bg)}
+.mk-pages,.mk-games{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.mk-pages{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}.mk-pages button{font-size:12px;padding:8px 2px}
+.mk-games{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}.mk-games button{padding:8px 2px}
+.mk-focus{border:1px solid var(--card-line);border-radius:16px;padding:14px;margin:10px 0}
+.mk-focus>.mk-nav:first-child{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:4px}.mk-focus>.mk-nav:first-child button{font-size:12px;padding:8px 3px;min-width:0}.mk-focus>.mk-nav:first-child b{font-size:14px;white-space:nowrap}
+.mk-focus h3{font-size:22px;margin:10px 0 4px}.mk-focus-nums{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin:10px 0 16px;font-variant-numeric:tabular-nums}
+.mk-focus-nums span{text-align:center;font-size:clamp(24px,7vw,36px);font-weight:900;letter-spacing:-.04em}
+.mk-status{min-height:26px;color:var(--teal);font-size:14px;font-weight:800}
+.mk-primary{width:100%;min-height:52px;margin:10px 0}.mk-nav>button,.mk-check{min-height:44px;flex-shrink:0}
+.mk-check{border:1px solid var(--card-line);background:var(--card);color:var(--fg);border-radius:9px;padding:8px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.mk-check[aria-checked=true]{border-color:var(--teal);color:var(--teal);background:var(--teal-soft)}
+.is-marked{border-color:var(--teal)}.game.is-marked .k{color:var(--teal)}
+.game.mk-row{grid-template-columns:1.3em minmax(0,1fr)}.mk-row .mk-check{grid-column:2;justify-self:end}.mk-row .big{gap:2px}.mk-row .big span{min-width:0}
 .mk-new{display:flex;justify-content:space-between;align-items:baseline;margin:2px 0 8px;font-size:16px}
 .mk-new b{font-weight:900}.mk-new span{font-weight:800;color:var(--teal)}
-.mk-fix{margin-top:14px;border:1px dashed var(--line);border-radius:14px;padding:4px 12px}
-.mk-fix summary{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:10px 0;cursor:pointer;font-size:14px}
-.mk-fix summary span{color:var(--muted);font-size:12.5px}
-.mk-fix .paper{border:0;padding:0 2px}
+.mk-fix,.mk-online{margin-top:14px;border:1px dashed var(--line);border-radius:14px;padding:4px 12px}
+.mk-fix summary,.mk-online summary{padding:10px 0;cursor:pointer;font-size:14px}.mk-fix summary span,.mk-online summary span{display:block;color:var(--muted);font-size:12.5px}
+.mk-fix .paper,.mk-online .paper{border:0;padding:0 2px}.mk-online .p-actions{margin:10px 0}
 .slips{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;padding:10px 0 14px;border-top:1px solid var(--line)}
-.slip-g{border:1px solid var(--line);border-radius:12px;padding:8px}
-.slip-h{display:flex;justify-content:space-between;align-items:baseline;font-weight:800;font-size:14px;margin:0 2px 6px}
-.slip-h span{font-weight:600;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.slip-g.done .slip-h b::after{content:" ✓ 칠함";color:var(--teal);font-size:12px}
-.slip-n{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-.slip-n i{font-style:normal;aspect-ratio:1;display:grid;place-items:center;font-size:10.5px;color:var(--faint);border-radius:4px;font-variant-numeric:tabular-nums}
-.slip-n i.m{background:var(--fg);color:var(--bg);font-weight:800;font-size:11.5px}
-.tk.done .tk-t::after{content:"✓ 입력함";color:var(--teal);font-size:12px}
+.slip-g{border:1px solid var(--line);border-radius:12px;padding:8px}.slip-g .mk-check{width:100%;margin-top:8px}
+.slip-h{display:flex;justify-content:space-between;align-items:baseline;font-weight:800;font-size:14px;margin:0 2px 6px}.slip-h span{font-weight:600;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.slip-n{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.slip-n i{font-style:normal;aspect-ratio:1;display:grid;place-items:center;font-size:11px;color:var(--muted);border-radius:4px;font-variant-numeric:tabular-nums}
+.slip-n i.m{background:var(--fg);color:var(--bg);font-weight:800}.mk-focus .slip-n{margin:12px 0}.mk-focus .slip-n i{font-size:14px}
+.mk-summary{padding:10px 0;font-size:13px;color:var(--muted)}
+body.marking #weekCard,body.marking #lastCard,body.marking .top,body.marking #gameSw,body.marking #buyBox,body.marking #lEditDetails{display:none}
+body.marking .wrap{padding-top:10px}button:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 .total{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;padding:14px 4px;border-top:1px solid var(--strong);border-bottom:1px solid var(--line);
   position:sticky;bottom:calc(var(--tabbar) + env(safe-area-inset-bottom,0px));background:var(--card);z-index:3}
 .total b{font-size:20px;font-weight:900}
@@ -474,7 +482,7 @@ td.neg{color:var(--red)}
 </nav>
 <script>
 (()=>{
-const APP_VERSION='202611140100';
+const APP_VERSION='202611141100';
 const OWNER='warren0867',REPO='lotto-data',API=`https://api.github.com/repos/${OWNER}/${REPO}/contents/data/`;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -890,41 +898,75 @@ function reviewSummary(){const s=roundStat(rvRound),net=s.prize-s.cost;
   $('rvSum').innerHTML=`<div class="sum${s.prize?'':' lose'}"><b>${s.prize?`${rankText(s.ranks)} · <span class="teal">세후 ${won(s.prize)}원</span>`:'전부 낙첨'}</b>
     <span>${s.lines}줄 · ${won(s.cost)}원 구매 · 손익 ${net>0?'+':''}${won(net)}원 · 최고 ${s.best}개 일치</span></div>`}
 
+/* ── 실제 구매 번호와 분리한 기기별 마킹 진행 ── */
+const MK={get(k){try{const x=JSON.parse(ls.get('gz-mk-'+k)||'[]');return new Set(Array.isArray(x)?x:[])}catch(_){return new Set()}},set(k,v){ls.set('gz-mk-'+k,JSON.stringify([...v]))}};
+const mkKey=l=>[...l].sort((a,b)=>a-b).join('.');
+let mkView=['focus','num','slip'].includes(ls.get('gz-markview-v2'))?ls.get('gz-markview-v2'):'focus',markSession=false,mkResetArm='';
+const markPanels=new Set();
+const markGroupKey=(g,gi)=>encodeURIComponent(g.t||'')+'-'+gi;
+function reuseReference(g,e){
+  if(g.online||!/고정/.test(g.t))return false;
+  const old=Object.keys(ROUNDS).map(Number).filter(i=>i<e).sort((a,b)=>a-b).map(i=>ROUNDS[i].g.find(x=>x.t===g.t&&!x.online)).find(Boolean);
+  return !!old&&JSON.stringify(old.l.map(mkKey))===JSON.stringify(g.l.map(mkKey));
+}
+function markingModel(e,G){
+  const forced=MK.get('R'+e),fresh=[],reuse=[],online=[];
+  G.forEach((g,gi)=>{const ref=reuseReference(g,e),again=forced.has(markGroupKey(g,gi));const target=g.online?online:ref&&!again?reuse:fresh;
+    for(let ci=0;ci<Math.ceil(g.l.length/5);ci++){
+      const no=target.length+1,rows=g.l.slice(ci*5,ci*5+5).map((nums,li)=>({nums,key:`v2-L${e}-${g.online?'web':'shop'}-${markGroupKey(g,gi)}-${ci}-${li}-${mkKey(nums)}`,legacy:mkKey(nums),slot:'ABCDE'[li],label:`${g.t} ${g.online?'온라인 묶음':'용지'} ${no} ${'ABCDE'[li]}게임`,gi,ci,li}));
+      target.push({g,gi,ci,no,ref,again,rows});
+    }
+  });return{fresh,reuse,online,rows:fresh.flatMap(p=>p.rows),onlineRows:online.flatMap(p=>p.rows)};
+}
+function markLedger(store,rows){
+  const done=MK.get(store),counts={};rows.forEach(r=>counts[r.legacy]=(counts[r.legacy]||0)+1);let changed=false;
+  rows.forEach(r=>{if(done.has(r.legacy)){if(counts[r.legacy]===1)done.add(r.key);done.delete(r.legacy);changed=true}});
+  if(changed)MK.set(store,done);return done;
+}
+function markCursor(e,rows,done){const saved=ls.get('gz-mk-pos-L'+e),at=rows.findIndex(r=>r.key===saved);return at>=0?at:Math.max(0,rows.findIndex(r=>!done.has(r.key)))}
+function markMove(e,key){ls.set('gz-mk-pos-L'+e,key);renderMark()}
+const markGrid=nums=>`<div class="slip-n" aria-label="선택 번호의 칸 위치">${Array.from({length:45},(_,j)=>`<i${nums.includes(j+1)?' class="m"':''}>${j+1}</i>`).join('')}</div>`;
+function markCheck(row,done,label='칠함'){return `<button type="button" class="mk-check" id="mk-${esc(row.key)}" data-mk="${esc(row.key)}" role="checkbox" aria-checked="${done.has(row.key)}" aria-label="${esc((row.label||row.slot+'게임')+' '+row.nums.map(p2).join(' '))} ${label}">${done.has(row.key)?'✓ '+label:label}</button>`}
+function markPaper(p,view,done,kind){
+  return `<div class="paper"><div class="paper-h">${kind==='online'?'온라인':kind==='reuse'?'재사용 용지':'새 용지'} ${p.no} · ${esc(p.g.t)}<span>${p.rows.length}게임 · ${won(p.rows.length*1000)}원</span></div>${kind==='online'?`<div class="p-actions"><button class="ghost" data-copy-group="${p.gi}" data-copy-chunk="${p.ci}">${p.rows.length}줄 묶음 복사</button></div>`:''}${view==='slip'?'<div class="slips">':''}${p.rows.map(row=>view==='slip'?`<div class="slip-g${done.has(row.key)?' is-marked':''}"><div class="slip-h"><b>${row.slot}</b><span>${row.nums.map(p2).join(' ')}</span></div>${markGrid(row.nums)}${markCheck(row,done)}</div>`:`<div class="game mk-row${done.has(row.key)?' is-marked':''}"><span class="k">${row.slot}</span><div class="big">${row.nums.map(n=>`<span>${p2(n)}</span>`).join('')}</div>${kind==='reuse'?'':markCheck(row,done,kind==='online'?'입력함':'칠함')}${kind==='online'?`<button class="ghost" data-copy-row="${esc(row.key)}">번호 복사</button>`:''}</div>`).join('')}${view==='slip'?'</div>':''}${kind==='reuse'?`<button class="ghost" data-force="${p.gi}">이 묶음 새로 칠하기</button>`:''}</div>`;
+}
 function renderMark(){
-  const e=NEXT,R=ROUNDS[e],bought=isBought(R),info=markGroups(e),G=info.g;
-  $('markTitle').textContent=`${e}회 마킹표`;
-  $('markNote').textContent=`${md(NEXT_DATE)}(토) 추첨`;
-  $('markWarn').innerHTML=!bought&&info.note?`<p class="warn">${esc(info.note)}</p>`:'';
-  let paper=0;const L='ABCDE',done=MK.get('L'+e);
-  // 고정 번호는 이미 칠해 둔 용지를 매주 다시 쓴다 → 접어 두고, 새 번호만 칠할 대상으로 보여 준다
-  const isFix=g=>/고정/.test(g.t),NEW=G.filter(g=>!isFix(g)),FIX=G.filter(isFix);
-  const paperHtml=(g,view,check)=>{const chunks=[];for(let i=0;i<g.l.length;i+=5)chunks.push(g.l.slice(i,i+5));
-    return chunks.map((c,ci)=>{const head=g.online?`온라인 · ${g.t}`:`${check?`용지 ${++paper} · `:''}${g.t}${chunks.length>1?` (${ci+1}/${chunks.length})`:''}`;
-      const mk=l=>{const k=mkKey(l);return check?` data-mk="${k}"`:''},dn=l=>check&&done.has(mkKey(l))?' done':'';
-      return `<div class="paper"><div class="paper-h">${esc(head)}<span${g.online?' class="on"':''}>${g.online?'동행복권 사이트':`${c.length}게임 · ${won(c.length*1000)}원`}</span></div>${
-        view==='slip'?`<div class="slips">${c.map((l,i)=>`<div class="slip-g${dn(l)}"${mk(l)}><div class="slip-h"><b>${L[i]}</b><span>${l.map(p2).join(' ')}</span></div><div class="slip-n">${Array.from({length:45},(_,j)=>`<i${l.includes(j+1)?' class="m"':''}>${j+1}</i>`).join('')}</div></div>`).join('')}</div>`
-        :c.map((l,i)=>`<div class="game${dn(l)}"${mk(l)}><span class="k">${L[i]}</span><div class="big">${l.map(n=>`<span>${p2(n)}</span>`).join('')}</div></div>`).join('')}</div>`}).join('')};
-  const nl=NEW.flatMap(g=>g.l),fl=FIX.flatMap(g=>g.l);
-  $('markPapers').innerHTML=(G.length?`<div class="mk-new"><b>이번 주 새로 칠할 번호</b><span>${nl.length?`${nl.length}줄`:'없음'}</span></div>`:'')
-    +(nl.length?`<div class="mk-tools"><div class="mk-sw" role="group" aria-label="마킹표 보기"><button data-mv="slip" class="${mkView==='slip'?'on':''}">용지 칸</button><button data-mv="num" class="${mkView==='num'?'on':''}">번호</button></div><span>칠한 줄을 누르면 흐려져요</span></div>`+NEW.map(g=>paperHtml(g,mkView,true)).join(''):G.length?'<p class="empty">이번 주는 새로 칠할 번호가 없어요. 고정 용지만 내면 돼요.</p>':'')
-    +(FIX.length?`<details class="mk-fix"><summary><b>고정 용지 그대로</b><span>${FIX.map(g=>`${g.t}${g.online?'(온라인)':''} ${g.l.length}줄`).join(' · ')}</span></summary>${FIX.map(g=>paperHtml(g,'num',false)).join('')}</details>`:'');
-  const all=G.flatMap(g=>g.l);
-  $('markTotal').innerHTML=`<div class="total"><span>합계 <b>${all.length}줄 · ${won(all.length*1000)}원</b></span><span class="muted">${nl.length?`새 번호 ${nl.length}줄(용지 ${paper}장) · 칠함 <b id="mkProg" style="font-size:inherit">${nl.filter(l=>done.has(mkKey(l))).length}/${nl.length}</b> · `:''}고정 ${fl.length}줄 그대로</span></div>`;
+  const e=NEXT,R=ROUNDS[e],G=markGroups(e).g,model=markingModel(e,G),rows=model.rows,allRows=rows.concat(model.onlineRows,model.reuse.flatMap(p=>p.rows)),done=markLedger('L'+e,allRows);
+  $('markTitle').textContent=`${e}회 마킹표`;$('markNote').textContent=`${md(NEXT_DATE)}(토) 추첨`;
+  $('markWarn').innerHTML=R?.skipped?'<p class="warn">이 회차는 미구매 예외로 기록돼 있습니다. 아래 체크는 마킹 진행만 표시합니다.</p>':'';
+  $('markPapers').querySelectorAll('[data-panel]').forEach(x=>{const k=x.dataset?.panel;if(k){x.open?markPanels.add(k):markPanels.delete(k)}});
+  const checked=rows.filter(r=>done.has(r.key)).length,pos=markCursor(e,rows,done),row=rows[pos],paper=row&&model.fresh.find(p=>p.rows.some(r=>r.key===row.key));
+  let content=`<div class="mk-session"><span class="note">체크·마지막 위치는 이 기기에 저장</span><button class="ghost" data-session="${markSession?'end':'start'}">${markSession?'집중 보기 끝내기':'마킹에 집중'}</button></div><div class="mk-summary"><span>새 용지 <b>${model.fresh.length}장 · ${rows.length}줄</b></span><span>재사용 ${model.reuse.length}장 · 온라인 ${model.onlineRows.length}줄</span></div>`;
+  if(rows.length){
+    content+=`<div class="mk-tools"><div class="mk-sw" role="group" aria-label="마킹표 보기">${[['focus','한 장씩'],['num','전체 번호'],['slip','전체 칸']].map(([v,t])=>`<button data-mv="${v}" aria-pressed="${mkView===v}">${t}</button>`).join('')}</div><p class="note" role="status">새 번호 칠함 ${checked}/${rows.length}${checked===rows.length?' · 새 용지 마킹 완료':''}</p></div>`;
+    if(mkView==='focus')content+=`<div class="mk-pages" aria-label="새 용지 선택">${model.fresh.map(p=>`<button data-page="${p.no-1}"${p===paper?' aria-current="step"':''}>${p.no}장 ${p.rows.filter(r=>done.has(r.key)).length}/${p.rows.length}</button>`).join('')}</div><div class="mk-focus"><div class="mk-nav"><button class="ghost" data-page="${paper.no-2}"${paper.no===1?' disabled':''}>이전 용지</button><b>새 용지 ${paper.no}/${model.fresh.length}</b><button class="ghost" data-page="${paper.no}"${paper.no===model.fresh.length?' disabled':''}>다음 용지</button></div><p class="note">${esc(paper.g.t)} · ${paper.rows.length}게임 · ${won(paper.rows.length*1000)}원</p><div class="mk-games" aria-label="현재 용지 A~E 게임">${paper.rows.map(r=>`<button data-cursor="${esc(r.key)}"${r.key===row.key?' aria-current="step"':''} aria-label="${r.slot}게임 ${done.has(r.key)?'칠함':'미완료'}">${r.slot}${done.has(r.key)?' ✓':''}</button>`).join('')}</div><h3>${row.slot} 게임</h3><div class="mk-focus-nums" aria-label="${esc(row.nums.map(p2).join(' '))}">${row.nums.map(n=>`<span>${p2(n)}</span>`).join('')}</div><div class="mk-status" role="status">${done.has(row.key)?'✓ 이 게임 칠함':'위 번호 6개를 용지에 칠해 주세요'}</div><button class="go mk-primary" id="mkAdvance" data-advance="${esc(row.key)}"${checked===rows.length?' disabled':''}>${checked===rows.length?'새 용지 마킹 완료':done.has(row.key)?'남은 미완료 게임으로':checked===rows.length-1?'칠함 · 새 용지 마킹 완료':'칠함 · 다음 미완료 게임'}</button><div class="mk-nav"><button class="ghost" data-step="-1"${pos===0?' disabled':''}>이전 게임</button><button class="ghost" data-step="1"${pos===rows.length-1?' disabled':''}>다음 게임</button>${markCheck(row,done)}</div><details data-panel="grid"${markPanels.has('grid')?' open':''}><summary>번호 칸 위치 보기</summary>${markGrid(row.nums)}</details>${paper.ref&&paper.again?`<button class="ghost" data-unforce="${paper.gi}">원래 재사용 용지로 되돌리기</button>`:''}</div>`;
+    else content+=model.fresh.map(p=>markPaper(p,mkView,done,'fresh')).join('');
+  }else content+='<p class="empty">새로 칠할 번호가 없습니다. 아래 재사용 용지와 온라인 번호를 확인하세요.</p>';
+  if(model.reuse.length)content+=`<details class="mk-fix" data-panel="reuse"${markPanels.has('reuse')?' open':''}><summary><b>재사용 판매점 용지 ${model.reuse.length}장</b><span>${model.reuse.reduce((n,p)=>n+p.rows.length,0)}줄 · 기존 고정 번호와 일치</span></summary>${model.reuse.map(p=>markPaper(p,'num',done,'reuse')).join('')}</details>`;
+  if(model.online.length)content+=`<details class="mk-online" data-panel="online"${markPanels.has('online')?' open':''}><summary><b>온라인 ${model.onlineRows.length}줄</b><span>입력함 ${model.onlineRows.filter(r=>done.has(r.key)).length}/${model.onlineRows.length} · 종이 용지와 별도</span></summary><p class="note">동행복권 저장 번호·직전 회차 재선택을 활용할 수 있습니다.</p>${model.online.map(p=>markPaper(p,'num',done,'online')).join('')}</details>`;
+  content+=`<div class="mk-summary"><span>구매 여부와 별개인 마킹 진행입니다.</span><button class="ghost" data-reset="1">${mkResetArm==='L'+e?'한 번 더 누르면 체크 초기화':'마킹 체크 초기화'}</button></div>`;
+  $('markPapers').innerHTML=content;
+  const all=G.flatMap(g=>g.l);$('markTotal').innerHTML=`<div class="total"><span>전체 <b>${all.length}줄 · ${won(all.length*1000)}원</b></span><span class="muted">새 용지 ${model.fresh.length}장 · 칠함 <b id="mkProg" style="font-size:inherit">${checked}/${rows.length}</b> · 재사용 ${model.reuse.length}장 · 온라인 ${model.onlineRows.length}줄</span></div>`;
   $('buyBox').innerHTML=`<div class="done"><b>${R?.skipped?'이번 회차 미구매':'전부 구매 기준'}</b><span class="muted">지정한 번호는 매회 전부 구매로 기록합니다. 다르게 샀거나 안 산 회차만 아래에서 수정하세요.</span></div>`;
   if(!lEditDirty)renderLEditor($('lEditDetails').open&&lEditRound?lEditRound:e);
 }
-
-/* 마킹 진행 체크: 이 기기에만 저장(회차별). 기록 저장소에는 쓰지 않음 */
-const MK={get(k){try{return new Set(JSON.parse(ls.get('gz-mk-'+k)||'[]'))}catch(_){return new Set()}},set(k,v){ls.set('gz-mk-'+k,JSON.stringify([...v]))}};
-const mkKey=l=>[...l].sort((a,b)=>a-b).join('.');
-let mkView=ls.get('gz-markview')==='num'?'num':'slip';
+function markSessionSet(on){markSession=on;document.body.classList.toggle('marking',on);renderWeek();renderMark();if(on)$('markBlock').scrollIntoView({block:'start'})}
+function markSessionLeave(){if(!markSession)return;markSession=false;mkResetArm='';document.body.classList.remove('marking');renderMark()}
+async function markCopy(text){try{await navigator.clipboard.writeText(text);message('번호를 복사했습니다.')}catch(_){message('복사하지 못했습니다. 번호를 길게 눌러 복사해 주세요.')}}
 function mkTap(ev,store,prog){
-  const sw=ev.target.closest('[data-mv]');if(sw){mkView=sw.dataset.mv;ls.set('gz-markview',mkView);renderMark();return}
-  if(ev.target.closest('button,a,input,select,summary'))return;
-  const el=ev.target.closest('[data-mk]');if(!el)return;
-  const v=MK.get(store),k=el.dataset.mk;v.has(k)?v.delete(k):v.add(k);MK.set(store,v);
-  ev.currentTarget.querySelectorAll(`[data-mk="${k}"]`).forEach(x=>x.classList.toggle('done',v.has(k)));
-  const all=ev.currentTarget.querySelectorAll('[data-mk]'),p=$(prog);if(p)p.textContent=`${[...all].filter(x=>x.classList.contains('done')).length}/${all.length}`}
+  const t=ev.target;if(!t.closest('[data-reset]'))mkResetArm='';const model=store[0]==='L'?markingModel(NEXT,markGroups(NEXT).g):null,rows=model?.rows||[],done=MK.get(store);
+  const mode=t.closest('[data-mv]');if(mode){mkView=mode.dataset.mv;ls.set('gz-markview-v2',mkView);renderMark();return}
+  const session=t.closest('[data-session]');if(session){markSessionSet(session.dataset.session==='start');return}
+  const page=t.closest('[data-page]');if(page){const p=model.fresh[+page.dataset.page];if(p)markMove(NEXT,(p.rows.find(r=>!done.has(r.key))||p.rows[0]).key);return}
+  const cursor=t.closest('[data-cursor]');if(cursor){markMove(NEXT,cursor.dataset.cursor);return}
+  const step=t.closest('[data-step]');if(step){const p=markCursor(NEXT,rows,done)+(+step.dataset.step);if(rows[p])markMove(NEXT,rows[p].key);return}
+  const advance=t.closest('[data-advance]');if(advance){const k=advance.dataset.advance;done.add(k);MK.set(store,done);const pos=rows.findIndex(r=>r.key===k);const next=rows.slice(pos+1).find(r=>!done.has(r.key))||rows.find(r=>!done.has(r.key))||rows[pos];markMove(NEXT,next.key);if(ev.detail===0)$('mkAdvance')?.focus?.({preventScroll:true});return}
+  const force=t.closest('[data-force],[data-unforce]');if(force){const add=force.dataset.force!==undefined,gi=+(add?force.dataset.force:force.dataset.unforce),set=MK.get('R'+NEXT),g=markGroups(NEXT).g[gi],key=markGroupKey(g,gi);add?set.add(key):set.delete(key);MK.set('R'+NEXT,set);if(add){const prior=MK.get(store);model.reuse.filter(p=>p.gi===gi).flatMap(p=>p.rows).forEach(r=>{prior.delete(r.key);prior.delete(r.legacy)});MK.set(store,prior)}ls.set('gz-mk-pos-L'+NEXT,'');mkView='focus';renderWeek();renderMark();return}
+  const reset=t.closest('[data-reset]');if(reset){if(mkResetArm!==store){mkResetArm=store;renderMark();return}MK.set(store,new Set());ls.set('gz-mk-pos-L'+NEXT,'');mkResetArm='';renderMark();return}
+  const copy=t.closest('[data-copy-row],[data-copy-group],[data-copy-pension]');if(copy){if(copy.dataset.copyPension!==undefined){markCopy(pTickets(PNEXT)[+copy.dataset.copyPension].n);return}if(copy.dataset.copyRow){const r=model.onlineRows.find(r=>r.key===copy.dataset.copyRow);if(r)markCopy(r.nums.map(p2).join(' '));return}const g=markGroups(NEXT).g[+copy.dataset.copyGroup],ci=+copy.dataset.copyChunk;markCopy(g.l.slice(ci*5,ci*5+5).map(l=>l.map(p2).join(' ')).join('\n'));return}
+  const el=t.closest('[data-mk]');if(!el)return;const k=el.dataset.mk;done.has(k)?done.delete(k):done.add(k);MK.set(store,done);
+  if(store[0]==='L')renderMark();else renderPWeek();if(ev.detail===0)$('mk-'+k)?.focus?.({preventScroll:true});
+}
 $('markPapers').addEventListener?.('click',ev=>mkTap(ev,'L'+NEXT,'mkProg'));
 $('pTickets').addEventListener?.('click',ev=>mkTap(ev,'P'+PNEXT,'pmkProg'));
 
@@ -953,11 +995,12 @@ const ddayHtml=d=>{const n=dday(d);return n>0?`<span class="dday">D-${n}</span>`
 function renderWeek(){
   const R=ROUNDS[NEXT],G=markGroups(NEXT).g,all=G.flatMap(g=>g.l),on=G.filter(g=>g.online).flatMap(g=>g.l).length;
   let paper=0;G.filter(g=>!g.online).forEach(g=>paper+=Math.ceil(g.l.length/5));
-  const NG=G.filter(g=>!/고정/.test(g.t)),newN=NG.flatMap(g=>g.l).length;let newP=0;NG.filter(g=>!g.online).forEach(g=>newP+=Math.ceil(g.l.length/5));
+  const model=markingModel(NEXT,G),newN=model.rows.length,newP=model.fresh.length;
   $('weekCard').innerHTML=`<div class="hero-top"><span>로또 6/45 · <b>제 ${NEXT}회</b></span><span class="badge${R?.bought?' ok':''}">${R?.skipped?'미구매':all.length?'전부 구매 기준':'번호 준비 중'}</span></div>
     <div class="hero-when">${md(NEXT_DATE)}(토) 20:35 추첨 ${ddayHtml(NEXT_DATE)}</div>
     <div class="hero-amt">${all.length}줄<small>${won(all.length*1000)}원</small></div>
-    <div class="hero-sub">${all.length?`새로 칠할 ${newN}줄 (용지 ${newP}장) · 고정 ${all.length-newN}줄 그대로`:'아직 이번 주 번호가 없습니다'}</div>`;
+    <div class="hero-sub">${all.length?`새 용지 ${newP}장 · 재사용 ${model.reuse.length}장 · 온라인 ${on}줄`:'아직 이번 주 번호가 없습니다'}</div>${all.length?'<button class="ghost" id="markStart" style="margin-top:12px;color:inherit;border-color:currentColor">마킹 시작 · 이어하기</button>':''}`;
+  if($('markStart'))$('markStart').onclick=()=>markSessionSet(true);
   const e=RV[0];$('lastCard').hidden=!e;if(!e)return;
   const s=roundStat(e),d=DRAW[e];
   $('lastCard').innerHTML=`<div class="last-h"><h2>지난 ${e}회 결과</h2><span class="muted">${d.d.slice(5).replace('-','.')}(토)</span></div>
@@ -1077,12 +1120,12 @@ function renderPWeek(){
       <button class="link" id="pLastGo">번호별로 자세히</button>`;
     $('pLastGo').onclick=()=>{pRv=le;go('pension','review');setMode('preview');$('reviewNow').click()}}
   $('pMarkTitle').textContent=`${e}회 구매표`;$('pMarkNote').textContent=R?.skipped?'이번 회차 미구매':'매주 같은 번호 · 전부 구매 기준';
-  const pdone=MK.get('P'+e),pk=t=>t.n+'-'+t.jo.join('');
-  $('pTickets').innerHTML=ts.length?`<div class="mk-tools"><span>동행복권에서 입력한 번호를 누르면 흐려져요</span></div>`+ts.map((t,i)=>{
+  const pRows=ts.map((t,i)=>({key:`v2-P${e}-${i}-${t.n}-${[...t.jo].sort().join('.')}`,legacy:t.n+'-'+t.jo.join(''),slot:t.jo.map(j=>j+'조').join('·'),nums:[t.n]})),pdone=markLedger('P'+e,pRows),pk=(t,i)=>pRows[i].key;
+  $('pTickets').innerHTML=ts.length?`<div class="mk-tools"><span>입력한 뒤 입력함에 체크 · 이 기기에만 저장</span></div>`+ts.map((t,i)=>{
     const altRow='';
-    return `<div class="tk${pdone.has(pk(t))?' done':''}" data-mk="${pk(t)}"><div class="tk-h"><span class="tk-t">${esc(t.t)}${t.orig?`<span class="chip">대체 · 원래 ${t.orig}</span>`:''}</span><span class="muted">${t.jo.length===5?'1~5조 전부':t.jo.map(j=>j+'조').join('·')} · ${t.jo.length}장</span></div>
-      ${dgHtml(t.n)}${joHtml(t.jo)}${altRow}</div>`}).join(''):'<p class="empty">이번 회차 구매표가 없습니다.</p>';
-  $('pTotal').innerHTML=`<div class="total"><span>합계 <b>${cnt}장 · ${won(cnt*1000)}원</b></span><span class="muted">번호 ${ts.length}개${ts.length?` · 입력함 <b id="pmkProg" style="font-size:inherit">${ts.filter(t=>pdone.has(pk(t))).length}/${ts.length}</b>`:''}</span></div>`;
+    return `<div class="tk${pdone.has(pk(t,i))?' is-marked':''}"><div class="tk-h"><span class="tk-t">${esc(t.t)}${t.orig?`<span class="chip">대체 · 원래 ${t.orig}</span>`:''}</span><span class="muted">${t.jo.length===5?'1~5조 전부':t.jo.map(j=>j+'조').join('·')} · ${t.jo.length}장</span></div>
+      ${dgHtml(t.n)}${joHtml(t.jo)}${altRow}<div class="p-actions"><button class="ghost" data-copy-pension="${i}">6자리 복사</button>${markCheck(pRows[i],pdone,'입력함')}</div></div>`}).join(''):'<p class="empty">이번 회차 구매표가 없습니다.</p>';
+  $('pTotal').innerHTML=`<div class="total"><span>합계 <b>${cnt}장 · ${won(cnt*1000)}원</b></span><span class="muted">번호 ${ts.length}개${ts.length?` · 입력함 <b id="pmkProg" style="font-size:inherit">${ts.filter((t,i)=>pdone.has(pk(t,i))).length}/${ts.length}</b>`:''}</span></div>`;
   $('pBuyBox').innerHTML=`<div class="done"><b>${R?.skipped?'이번 회차 미구매':'매주 전부 구매로 기록'}</b><span class="muted">구매 확인은 필요 없습니다. 실제 번호·조·수량이 달라졌거나 안 산 회차만 아래에서 수정하세요. 수정은 이 회차에만 적용하고 다음 주 고정 번호는 유지합니다.</span></div>`;
 }
 async function savePension(e,ts,expected=pFingerprint(pBaseTickets(e))){
@@ -1233,6 +1276,7 @@ function readHash(){const h=location.hash.slice(1),m=h.match(/^(lotto|pension)-(
   if(!TABS[GAME].includes(TAB))TAB='week'}
 function go(g,t){GAME=g;TAB=TABS[g].includes(t)?t:'week';ls.set('gz-game',g);history.replaceState(null,'','#'+GAME+'-'+TAB);show();window.scrollTo(0,0)}
 function show(){
+  if(GAME!=='lotto'||TAB!=='week')markSessionLeave();
   document.body.dataset.game=GAME;
   $('gameSw').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.g===GAME));
   $('tabbar').querySelectorAll('button').forEach(b=>{b.hidden=!TABS[GAME].includes(b.dataset.t);b.dataset.t===TAB?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
