@@ -9,7 +9,7 @@ function harness(){
  const elements=new Map(),fields=Array.from({length:5},()=>({disabled:false})),messages=[];
  const $=id=>{if(!elements.has(id))elements.set(id,{innerHTML:'',textContent:'',disabled:false,value:'',querySelectorAll(selector){if(id==='pAnnuities'&&selector.startsWith('[data-claim')){const discard=selector.includes('discard'),attr=discard?'claimDiscard':'claim',pattern=discard?/data-claim-discard="(\d+)"/g:/data-claim="(\d+)"/g;return [...this.innerHTML.matchAll(pattern)].map(m=>{const b=$(attr+m[1]);b.dataset={[attr]:m[1]};return b})}return fields}});return elements.get(id)};
  const c={F:{pension_official:{341:{date:'2026-11-12',jo:3,n:'194929',b:'783820'}},pension_rounds:{342:{tickets:[clone(fixed)],bought:false}},pension_fixed:{tickets:[clone(fixed)]},pension_draws:[]},ls:{get:()=>null,set:()=>{}},Date:TestDate,structuredClone,PSYNC:{},writing:false,$,message:x=>messages.push(x),won:x=>x.toLocaleString('ko-KR'),esc:x=>String(x),mdhm:String,go:()=>{}};
- vm.createContext(c);vm.runInContext(section('const POFF={},PRD={};','function renderPPills()')+section('function pAnnuityItems(){','function renderTotals(){')+`;renderPWeek=()=>{};renderPEditor=()=>{};this.a={precompute,pDateString,pDateOf,pBaseTickets,pTickets,pCount,pRoundState,validatePTickets,pFingerprint,savePension,cancelPension,savePEditor,pAnnuityItems,renderPAnnuities,pClaimDrafts,pScore,PRD,POFF,setAlt:x=>PALT=x,setEditor:(e,rows,bought)=>{pEditRound=e;pEditRows=rows;pEditBought=bought;pEditExpected=JSON.stringify(PRD[e]||null);pEditDirty=true},dirty:()=>pEditDirty};`,c);
+ vm.createContext(c);vm.runInContext(section('const isBought=', 'const ready=')+section('const POFF={},PRD={};','function renderPPills()')+section('function pAnnuityItems(){','function renderTotals(){')+`;renderPWeek=()=>{};renderPEditor=()=>{};this.a={precompute,pDateString,pDateOf,pBaseTickets,pTickets,pCount,pRoundState,validatePTickets,pFingerprint,savePension,cancelPension,savePEditor,pAnnuityItems,renderPAnnuities,pClaimDrafts,pScore,PRD,POFF,setAlt:x=>PALT=x,setEditor:(e,rows,bought)=>{pEditRound=e;pEditRows=rows;pEditBought=bought;pEditExpected=JSON.stringify(PRD[e]||null);pEditDirty=true},dirty:()=>pEditDirty};`,c);
  c.a.precompute();c.renderAll=()=>c.a.precompute();
  let remote=clone(c.F.pension_rounds);
  c.write=async(n,mutate)=>{try{remote=mutate(clone(remote));c.F[n]=clone(remote);c.a.precompute();return true}catch(e){messages.push(e.message);return false}};
@@ -29,10 +29,8 @@ function harness(){
  await a.cancelPension(342);assert.equal(a.pCount(a.pTickets(342)),10);
  // Legacy purchase snapshot without sourceId must not re-add legacy use:true records.
  h.c.F.pension_rounds[342]={bought:false,tickets:[{t:'추첨기',n:'456789',jo:[1,2,3,4,5]}]};a.precompute();assert.equal(a.pCount(a.pTickets(342)),5);
- // A replacement stays selected after cancellation; reset returns the true original.
- h=harness();a=h.a;a.setAlt({0:0});await a.savePension(342,a.pTickets(342));a.setAlt({});await a.cancelPension(342);
- assert.equal(a.pTickets(342)[0].n,'101234');a.setAlt({0:1});assert.equal(a.pTickets(342)[0].n,'201234');a.setAlt({0:-1});assert.equal(a.pTickets(342)[0].n,'001234');assert.equal(a.pTickets(342)[0].orig,undefined);
- h.c.F.pension_rounds[342].final=true;a.precompute();a.setAlt({0:1});assert.equal(a.pTickets(342)[0].n,'101234');
+ // Local provisional replacements cannot change the actual purchase record.
+ h=harness();a=h.a;a.setAlt({0:0});assert.equal(a.pTickets(342)[0].n,'001234');
  // Remote changes must never be silently overwritten.
  h=harness();a=h.a;ts=a.pTickets(342);h.setRemote({342:{tickets:[{...clone(fixed),n:'999999'}],bought:false}});await a.savePension(342,ts);assert.equal(h.remote()[342].tickets[0].n,'999999');assert.equal(h.remote()[342].bought,false);assert.ok(h.messages.includes('stale'));
  // Purchase cancellation protects simultaneous edits, too.
@@ -51,6 +49,6 @@ function harness(){
  // Every pension failure must result in partial sync and its own failure state.
  const q={TOKEN:'test',writing:false,busy:false,PSYNC:{},ghGet:async n=>{if(n.startsWith('pension'))throw new Error('500');return true},cache:()=>{},renderAll:()=>{},showSetup:()=>{},renderSync:()=>{},Date};vm.createContext(q);vm.runInContext("let syncState='',lastSync=0;"+section('async function syncAll(){','async function write(')+';this.sync=syncAll;this.state=()=>syncState',q);await q.sync();assert.equal(q.state(),'partial');assert.equal(Object.values(q.PSYNC).filter(x=>x.ok===false).length,4);
  // Lottery draw rows still use their own use flag.
- const r={hm:()=>'',ballHtml:()=>'',esc:String,mdhm:String};vm.createContext(r);vm.runInContext(section('function drawRow(','function renderLog(')+';this.row=drawRow',r);assert.match(r.row({id:'l1',nums:[1,2,3,4,5,6],bonus:7,at:1,use:true},null,true),/aria-pressed="true"/);
+ const r={ROUNDS:{},hm:()=>'',ballHtml:()=>'',esc:String,mdhm:String};vm.createContext(r);vm.runInContext(section('function drawRow(','function renderLog(')+';this.row=drawRow',r);assert.match(r.row({id:'l1',nums:[1,2,3,4,5,6],bonus:7,at:1,use:true},null,true),/aria-pressed="true"/);
  console.log('PASS pension: KST dates, deadline transitions, partial/invalid/duplicate tickets, purchase/cancel/legacy dedup, alternate reset, stale purchase/cancel protection, historical edits, leading zero, empty unpurchase, editor write lock, annuities, partial sync, lottery row regression');
 })().catch(e=>{console.error(e);process.exitCode=1});

@@ -19,7 +19,7 @@ const pd={jo:3,n:'194929',b:'783820'};
 for(const [n,jo,r] of [['194929',3,1],['194929',1,2],['783820',2,'B'],['094929',1,3],['004929',5,4],['000929',1,5],['000029',1,6],['000009',1,7],['271943',1,0],['386492',5,0]])assert.equal(pc.rank(n,jo,pd),r,`${n} ${jo}조`);
 assert.equal(pc.rank('386492',5,{jo:4,n:'194892',b:'288615'}),6); // 340회 5조 386492 = 6등(끝 2자리)
 assert.equal(pc.suf('208597','194929'),0);assert.equal(pc.cash[6],5000);
-const purchase=js.slice(js.indexOf('const groupsJSON='),js.indexOf('/* ── 소리'));
+const purchase=js.slice(js.indexOf('const groupsJSON='),js.indexOf('/* ── 실제 구매 내용 수정'));
 async function scenario({fail='',stale=false}={}){
  const old=[{t:'고정',l:[[1,2,3,4,5,6]],online:true}],remote={1250:{groups:structuredClone(old),bought:false}},messages=[];
  if(stale)remote[1250].groups[0].l=[[7,8,9,10,11,12]];
