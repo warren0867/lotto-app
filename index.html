@@ -225,6 +225,15 @@ summary{cursor:pointer;font-size:14px;font-weight:700}details[open]>summary{marg
 .pres-row{display:grid;grid-template-columns:4.2em 1fr;align-items:center;gap:10px}
 .pres-row .l{font-size:13px;font-weight:800;color:var(--muted)}
 
+/* 실제 구매표 편집 */
+.p-edit{display:grid;gap:12px;margin-top:16px}
+.p-edit label{display:grid;gap:6px;font-size:14px}
+.p-edit input[type=text],.p-edit input[type=number],.p-edit select{font:inherit;min-height:44px;width:100%;min-width:0;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+.p-edit-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 0;border-bottom:1px solid var(--line)}
+.p-edit-row .p-joins{grid-column:1/-1;display:flex;gap:12px;flex-wrap:wrap}
+.p-joins label{display:flex;align-items:center;gap:4px;min-height:40px}
+.p-actions{display:flex;gap:8px;flex-wrap:wrap}.p-actions button{min-height:44px}
+.p-edit-row button{justify-self:start}.p-edit-error{color:var(--red);font-size:14px}
 /* 기록 */
 .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .kpi{border-radius:14px;background:var(--seg);padding:14px 16px}
@@ -330,6 +339,7 @@ td.neg{color:var(--red)}
       <div class="status" id="status" aria-live="polite"></div>
     </div>
     <div class="controls" id="ctlBox">
+      <p class="note" id="pDrawInfo" hidden>기기 난수로 뽑은 번호를 공 움직임으로 보여 줍니다. 방송의 물리 환경을 재현하지 않으며 예측 우위는 확인되지 않았습니다. 공 추출 순서·보너스 재투입 방식은 앱의 연출입니다.</p>
       <div class="optrow" id="drawOpts">
         <label class="switch"><input type="checkbox" id="envOpt"><span class="tr"></span><span>전회차와 같은 결과에서 이어 뽑기<small id="envHint"></small></span></label>
       </div>
@@ -389,12 +399,15 @@ td.neg{color:var(--red)}
   <!-- 연금 · 이번 주 -->
   <section class="view" id="pv-week" hidden>
     <div class="hero" id="pWeekCard"></div>
+    <div class="card block" id="pHealth" role="status"></div>
+    <div class="card block" id="pOfficial"></div>
     <div class="card last" id="pLastCard" hidden></div>
     <div class="card block">
       <div class="block-head"><h2 id="pMarkTitle"></h2><span class="muted" id="pMarkNote"></span></div>
       <div id="pTickets"></div>
       <div id="pTotal"></div>
       <div id="pBuyBox"></div>
+      <details id="pEditDetails"><summary>실제 구매표 편집 · 과거 기록 정정</summary><div id="pEditor" class="p-edit"></div></details>
     </div>
   </section>
 
@@ -404,6 +417,9 @@ td.neg{color:var(--red)}
     <div class="card block">
       <div class="block-head"><h2>연금 누적</h2><span class="muted" id="pRange"></span></div>
       <div class="kpis" id="pKpis"></div>
+      <div id="pPending" class="note"></div>
+      <div id="pAnnuities"></div>
+      <button class="ghost" id="pEditHistory">과거 구매 기록 정정</button>
       <p class="note">3~7등은 200만원 이하라 세금이 없습니다. 1·2등·보너스는 매달 나눠 받는 연금식이라 손익 합계에는 넣지 않고 따로 표시합니다.</p>
     </div>
     <div class="card block"><h2>회차별 성적</h2><div class="tw"><table id="pTbl"></table></div></div>
@@ -434,7 +450,7 @@ td.neg{color:var(--red)}
 </nav>
 <script>
 (()=>{
-const APP_VERSION='202611131500';
+const APP_VERSION='202611132100';
 const OWNER='warren0867',REPO='lotto-data',API=`https://api.github.com/repos/${OWNER}/${REPO}/contents/data/`;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -452,6 +468,7 @@ const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:
 let TOKEN=ls.get('lotto-gh-token')||'';
 const F={official:null,rounds:null,app_draws:null,purchases:null,flow:null,pension_official:null,pension_rounds:null,pension_fixed:null,pension_draws:null},SHA={},ETAG={};
 let syncState='', lastSync=0,writing=false;
+const PSYNC={};
 function message(t){$('appMessage').hidden=!t;$('appMessage').firstElementChild.textContent=t}
 const ready=()=>!!(F.official&&Object.keys(F.official).length&&F.rounds);
 try{const c=JSON.parse(ls.get('lotto-cache')||'null');if(c)Object.assign(F,c)}catch(e){}
@@ -461,9 +478,9 @@ const H=()=>({Authorization:'Bearer '+TOKEN,Accept:'application/vnd.github+json'
 async function ghGet(name,force){
   const h=H();if(ETAG[name]&&!force)h['If-None-Match']=ETAG[name];
   const r=await fetch(API+name+'.json',{headers:h,cache:'no-store'});
-  if(r.status===304)return false;
+  if(r.status===304){if(name.startsWith('pension'))PSYNC[name]={at:Date.now(),ok:true};return false;}
   if(!r.ok){const e=new Error(String(r.status));e.status=r.status;throw e}
-  ETAG[name]=r.headers.get('ETag');const j=await r.json();SHA[name]=j.sha;F[name]=JSON.parse(b64d(j.content));return true;
+  ETAG[name]=r.headers.get('ETag');const j=await r.json();SHA[name]=j.sha;F[name]=JSON.parse(b64d(j.content));if(name.startsWith('pension'))PSYNC[name]={at:Date.now(),ok:true};return true;
 }
 async function ghEdit(name,mutate,msg){ // 최신본을 받아 고친 뒤 저장, 충돌이면 다시
   for(let i=0;i<3;i++){
@@ -480,14 +497,14 @@ const cache=()=>ls.set('lotto-cache',JSON.stringify(F));
 async function syncAll(){
   if(!TOKEN){showSetup(true);return}
   if(writing||busy)return;
-  try{let ch=false;for(const n of ['official','rounds','app_draws','purchases','flow','pension_official','pension_rounds','pension_fixed','pension_draws'])ch=(await ghGet(n).catch(e=>{if(n==='flow'||n.startsWith('pension'))return false;throw e}))||ch;
-    syncState='ok';lastSync=Date.now();if(ch)cache();renderAll();showSetup(false)}
+  try{let ch=false;for(const n of ['official','rounds','app_draws','purchases','flow','pension_official','pension_rounds','pension_fixed','pension_draws'])ch=(await ghGet(n).catch(e=>{if(n==='flow')return false;if(n.startsWith('pension')){PSYNC[n]={...PSYNC[n],ok:false,error:String(e.status||e.message)};return false;}throw e}))||ch;
+    syncState=Object.values(PSYNC).some(x=>!x.ok)?'partial':'ok';lastSync=Date.now();if(ch)cache();renderAll();showSetup(false)}
   catch(e){syncState='err';renderSync();if(e.status===401||e.status===403||e.status===404)showSetup(true,'토큰을 확인해 주세요. lotto-data 저장소에 Contents 읽기·쓰기 권한이 있어야 합니다.')}
 }
 async function write(name,mutate,msg){
   if(!TOKEN){showSetup(true);message('저장하려면 먼저 연결해 주세요.');return false}
-  try{await ghEdit(name,mutate,msg);syncState='ok';lastSync=Date.now();renderAll();return true}
-  catch(e){syncState='err';renderSync();message(e.message==='stale'?'다른 기기에서 번호가 변경됐습니다. 새로고침 후 마킹표를 다시 확인해 주세요.':'저장하지 못했습니다. 인터넷 연결을 확인하고 다시 눌러 주세요.');return false}
+  try{await ghEdit(name,mutate,msg);syncState=Object.values(PSYNC).some(x=>!x.ok)?'partial':'ok';lastSync=Date.now();renderAll();return true}
+  catch(e){syncState='err';renderSync();message(e.message==='duplicate'?'같은 번호·조가 중복됩니다. 구매표 편집에서 확인해 주세요.':e.message==='invalid'? '번호·조·회차를 확인해 주세요.':e.message==='closed'?'마감된 회차입니다. 실제 구매 기록은 구매표 편집에서 정정해 주세요.':e.message==='stale'?'다른 기기에서 번호가 변경됐습니다. 새로고침 후 마킹표를 다시 확인해 주세요.':'저장하지 못했습니다. 인터넷 연결을 확인하고 다시 눌러 주세요.');return false}
 }
 function showSetup(on,msg){$('setup').hidden=!on;if(msg)$('setupMsg').textContent=msg;if(!ready()){document.querySelectorAll('section.view').forEach(s=>s.hidden=true);$('tabbar').hidden=true;$('gameSw').hidden=true}}
 $('copyUrl').onclick=async e=>{const t='https://github.com/settings/personal-access-tokens/new';try{await navigator.clipboard.writeText(t);e.currentTarget.textContent='복사됨'}catch(err){const r=document.createRange();r.selectNodeContents($('tokUrl'));getSelection().removeAllRanges();getSelection().addRange(r)}};
@@ -763,6 +780,7 @@ function setStage(){
   else{$('stTitle').innerHTML=`제 <b>${NEXT}</b>회 추첨`;$('stSub').textContent=`${selHogi||'-'}호기 · ${md(NEXT_DATE)}(토) 추첨 예정`}
 }
 function setMode(m){if(busy)newRun();busy=false;airT=0;cancelArm=false;mode=m;const pen=m[0]==='p',d=m==='draw'||m==='pdraw',lr=m==='review',pr=m==='preview';
+  $('pDrawInfo').hidden=!pen;
   $('trayLabel').textContent=pen?'조 · 6자리':d?'생성 번호':'실제 당첨번호';$('tlabels').hidden=pen;$('tray2').hidden=!pen;
   $('eqDetails').hidden=m!=='draw';$('drawOpts').hidden=m!=='draw';$('drawLog').hidden=m!=='draw';$('flowBlock').hidden=m!=='draw';$('rvPills').hidden=!lr;$('rvBlock').hidden=!lr;
   $('pDrawLog').hidden=m!=='pdraw';$('pPills').hidden=!pr;$('pResult').hidden=!pr;$('pLines').hidden=!pr;$('reviewNow').hidden=d;
@@ -871,7 +889,7 @@ function renderDash(){
   if(skipped.length)rows+=skipped.map(e=>`<tr><td>${e}</td><td>${DRAW[e].d.slice(5).replace('-','.')}</td><td>${DRAW[e].hogi||'–'}</td><td colspan="6" class="l" style="color:var(--faint)">구매하지 않음</td></tr>`).join('');
   const net=prize-cost;LT={cost,prize};
   $('dashRange').textContent=RV.length?`${RV[RV.length-1]}~${RV[0]}회 · ${RV.length}회 구매`:'';
-  $('kpis').innerHTML=[[`${won(cost)}원`,'구매액',''],[`${won(prize)}원`,'당첨금(세후 추정)','pos'],[`${net>0?'+':''}${won(net)}원`,'손익',net>=0?'pos':'neg'],[`${allRanks.length}장`,rankText(allRanks)||'당첨 없음','']]
+  $('kpis').innerHTML=[[`${won(cost)}원`,'결과 확정 구매액',''],[`${won(prize)}원`,'당첨금(세후 추정)','pos'],[`${net>0?'+':''}${won(net)}원`,'결과 확정 손익',net>=0?'pos':'neg'],[`${allRanks.length}장`,rankText(allRanks)||'당첨 없음','']]
     .map(([b,s,c])=>`<div class="kpi ${c}"><b>${b}</b><span>${s}</span></div>`).join('');
   $('roundTbl').innerHTML=`<thead><tr><th>회차</th><th>추첨일</th><th>호기</th><th>줄</th><th>구매액</th><th>최고</th><th>당첨</th><th>세후</th><th>손익</th></tr></thead><tbody>${rows}</tbody>`;
   const C=(n,k)=>{let v=1;for(let i=0;i<k;i++)v=v*(n-i)/(i+1);return v},TOT=C(45,6),P=[0,1,2,3,4,5,6].map(k=>C(6,k)*C(39,6-k)/TOT);
@@ -889,11 +907,12 @@ function renderDash(){
   renderSync();
 }
 function renderSync(){const el=$('syncNote');el.className='sync '+syncState;
-  el.lastElementChild.textContent=syncState==='ok'?`저장소와 연결됨 · ${hm(lastSync)} 기준 · 오른쪽 위 새로고침으로 최신 기록 받기`:syncState==='err'?'저장소에 연결하지 못했습니다. 마지막으로 받은 기록을 보여 줍니다':'연결 전'}
+  el.lastElementChild.textContent=syncState==='ok'?`저장소와 연결됨 · ${hm(lastSync)} 기준 · 오른쪽 위 새로고침으로 최신 기록 받기`:syncState==='partial'?'연금 일부 기록 갱신 실패 · 연금 이번 주에서 확인해 주세요':syncState==='err'?'저장소에 연결하지 못했습니다. 마지막으로 받은 기록을 보여 줍니다':'연결 전'}
 
 /* ── 연금복권720+ : 조(1~5) + 6자리, 끝자리부터 맞춰 등수 ── */
 const POFF={},PRD={};let PLAST=0,PNEXT=0,PNEXT_DATE=new Date(),PRV=[],pRv=null,PALT={},paltRound=0,pCancelArm=false,PT={cost:0,prize:0,ann:[]};
-const pDateOf=i=>{const t=new Date('2020-05-07T00:00:00');t.setDate(t.getDate()+7*(i-1));return t};
+const pDateString=i=>new Date(Date.UTC(2020,4,7)+7*(i-1)*864e5).toISOString().slice(0,10);
+const pDateOf=i=>new Date(pDateString(i)+'T00:00:00+09:00');
 const sufOf=(a,b)=>{let k=0;while(k<6&&a[5-k]===b[5-k])k++;return k};
 const pRank=(n,jo,d)=>{if(n===d.b)return 'B';const k=sufOf(n,d.n);return k===6?(jo===d.jo?1:2):k?8-k:0};
 const P_CASH={3:1e6,4:1e5,5:5e4,6:5e3,7:1e3},P_ANN={1:'월 700만원×20년',2:'월 100만원×10년',B:'월 100만원×10년'};
@@ -908,11 +927,44 @@ function precompute(){
   for(const [e,x] of Object.entries(F.pension_rounds||{}))PRD[+e]=x;
   PLAST=Math.max(0,...Object.keys(POFF).map(Number));PNEXT=PLAST+1;PNEXT_DATE=pDateOf(PNEXT);
   PRV=Object.keys(PRD).map(Number).filter(e=>POFF[e]&&PRD[e].bought&&PRD[e].tickets?.length).sort((a,b)=>b-a);
+  if(pRv&&!PRV.includes(pRv))pRv=PRV[0]||null;
   if(paltRound!==PNEXT){paltRound=PNEXT;try{PALT=JSON.parse(ls.get('gz-palt-'+PNEXT)||'{}')}catch(e){PALT={}}}
 }
-function pTickets(e){const R=PRD[e];if(R?.bought)return R.tickets||[];
-  const used=(F.pension_draws||[]).filter(x=>x.round===e&&x.use===true).sort((a,b)=>a.at-b.at).map(x=>({t:'추첨기',n:x.n,jo:[1,2,3,4,5]}));
-  return (R?.tickets||F.pension_fixed?.tickets||[]).map((t,i)=>PALT[i]>=0&&t.alt?.[PALT[i]]?{t:t.t,n:t.alt[PALT[i]],jo:t.jo,orig:t.n}:t).concat(used)}
+// 구매 스냅샷에 번호·조·출처를 보존하여 완료 취소 시 중복 추가를 막는다.
+function pBaseTickets(e,R=PRD[e]){
+  const base=structuredClone(R?.tickets||(e===PNEXT?F.pension_fixed?.tickets:[])||[]);
+  if(R?.bought||R?.final||POFF[e])return base;
+  const used=(F.pension_draws||[]).filter(x=>x.round===e&&x.use===true&&!(R?.excludedDrawIds||[]).includes(x.id)).sort((a,b)=>a.at-b.at);
+  for(const x of used)if(!base.some(t=>t.sourceId===x.id||(!t.sourceId&&t.t==='추첨기'&&t.n===x.n)))base.push({t:'추첨기',n:x.n,jo:[1,2,3,4,5],sourceId:x.id});
+  return base;
+}
+const pFingerprint=ts=>JSON.stringify(ts);
+function pTickets(e){return pBaseTickets(e).map((t,i)=>{
+  if(e!==PNEXT||PRD[e]?.bought||PRD[e]?.final||POFF[e]||PALT[i]===undefined)return t;
+  const original=t.orig||t.n,n=PALT[i]>=0?t.alt?.[PALT[i]]:original;if(!n)return t;
+  const next={...t,n};if(n===original)delete next.orig;else next.orig=original;return next;
+})}
+function validatePTickets(ts){
+  if(!Array.isArray(ts)||!ts.length)throw new Error('invalid');
+  const seen=new Set();for(const t of ts){
+    if(typeof t.n!=='string'||!/^\d{6}$/.test(t.n)||!Array.isArray(t.jo)||!t.jo.length||t.jo.some(j=>!Number.isInteger(j)||j<1||j>5)||new Set(t.jo).size!==t.jo.length)throw new Error('invalid');
+    for(const j of t.jo){const key=j+':'+t.n;if(seen.has(key))throw new Error('duplicate');seen.add(key)}
+  }return ts;
+}
+function pRoundState(e,now=Date.now()){
+  const day=pDateString(e),start=Date.parse(pDateString(e-1)+'T22:00:00+09:00'),close=Date.parse(day+'T17:00:00+09:00'),draw=Date.parse(day+'T19:05:00+09:00');
+  if(POFF[e])return {label:'결과 확정',open:false};
+  if(now<start)return {label:'다음 회차 판매 대기',open:false};
+  if(now<close)return {label:'판매 중',open:true};
+  return {label:now<draw?'인터넷 판매 마감 · 결과 대기':now<draw+90*60000?'결과 발표·수집 대기':'결과 갱신 지연',open:false};
+}
+const pExcluded=e=>(F.pension_draws||[]).filter(x=>x.round===e).map(x=>x.id);
+const pSyncOK=()=>['pension_official','pension_rounds','pension_fixed','pension_draws'].every(n=>PSYNC[n]?.ok);
+function renderPHealth(){
+  const names={pension_official:'공식 결과',pension_rounds:'구매 기록',pension_fixed:'고정 구성',pension_draws:'추첨 기록'};
+  $('pHealth').innerHTML='<h2>기록 갱신 상태</h2>'+Object.entries(names).map(([n,t])=>`<p class="note">${t}: ${PSYNC[n]?.ok?'확인 '+mdhm(PSYNC[n].at):PSYNC[n]?.ok===false?'갱신 실패 · 마지막 저장 자료 표시':'아직 확인하지 않음'}</p>`).join('')+'<p class="note">오른쪽 위 새로고침으로 확인합니다. 인터넷은 목요일 17시 마감·22시 다음 회차 판매 재개, 판매점은 사정에 따라 다릅니다. 마감 후 실제 산 기록은 구매표 편집에서 입력하세요.</p>';
+  const d=POFF[PLAST];$('pOfficial').innerHTML=d?`<h2>최신 공식 결과 · ${PLAST}회</h2><p class="note">${esc(d.date)}</p><div class="pres-row"><span>${d.jo}조</span>${dgHtml(d.n,{cls:'sm'})}</div><div class="pres-row"><span>보너스</span>${dgHtml(d.b,{cls:'sm'})}</div><p><a href="https://www.dhlottery.co.kr/pt720/result" target="_blank" rel="noopener noreferrer">동행복권 공식 결과 확인</a></p>`:'<a href="https://www.dhlottery.co.kr/pt720/result" target="_blank" rel="noopener noreferrer">동행복권 공식 결과 확인</a>';
+}
 function pScore(e){const d=POFF[e],ts=PRD[e].tickets;let prize=0,best=0;const ranks=[];
   ts.forEach(t=>{best=Math.max(best,sufOf(t.n,d.n));t.jo.forEach(j=>{const k=pRank(t.n,j,d);if(k){ranks.push(k);prize+=P_CASH[k]||0}})});
   const count=pCount(ts);return{prize,best,ranks,count,cost:count*1000}}
@@ -923,12 +975,14 @@ const pSumHtml=s=>{const net=s.prize-s.cost,ann=s.ranks.filter(k=>P_ANN[k]);
     <span>${ann.length?ann.map(k=>`${pName(k)} ${P_ANN[k]}`).join(' · ')+' · ':''}${s.count}장 · ${won(s.cost)}원 구매 · 손익 ${net>0?'+':''}${won(net)}원 · 최고 끝 ${s.best}자리 일치</span></div>`};
 
 function renderPWeek(){
-  if(!pReady()){$('pWeekCard').innerHTML='<div class="hero-top"><span>연금복권720+</span></div><div class="hero-amt">준비 중</div><div class="hero-sub">오른쪽 위 새로고침을 누르면 연금 기록을 받아옵니다</div>';$('pLastCard').hidden=true;$('pTickets').innerHTML='';$('pTotal').innerHTML='';$('pBuyBox').innerHTML='';return}
-  const e=PNEXT,R=PRD[e],bought=!!R?.bought,ts=pTickets(e),cnt=pCount(ts);
-  $('pWeekCard').innerHTML=`<div class="hero-top"><span>연금복권720+ · <b>제 ${e}회</b></span><span class="badge${bought?' ok':''}">${bought?'구매 완료':'구매 전'}</span></div>
+  if(!pReady()){renderPHealth();$('pEditDetails').hidden=true;$('pWeekCard').innerHTML='<div class="hero-top"><span>연금복권720+</span></div><div class="hero-amt">준비 중</div><div class="hero-sub">오른쪽 위 새로고침을 누르면 연금 기록을 받아옵니다</div>';$('pLastCard').hidden=true;$('pTickets').innerHTML='';$('pTotal').innerHTML='';$('pBuyBox').innerHTML='';return}
+  $('pEditDetails').hidden=false;
+  const e=PNEXT,R=PRD[e],bought=!!R?.bought,ts=pTickets(e),cnt=pCount(ts),expected=pFingerprint(pBaseTickets(e)),state=pRoundState(e);
+  renderPHealth();if(!pEditDirty)renderPEditor($('pEditDetails').open&&pEditRound?pEditRound:e);
+  $('pWeekCard').innerHTML=`<div class="hero-top"><span>연금복권720+ · <b>제 ${e}회</b></span><span class="badge${bought?' ok':''}">${bought?'구매 완료':state.label}</span></div>
     <div class="hero-when">${md(PNEXT_DATE)}(목) 19:05 추첨 ${ddayHtml(PNEXT_DATE)}</div>
     <div class="hero-amt">${cnt}장<small>${won(cnt*1000)}원</small></div>
-    <div class="hero-sub">번호 ${ts.length}개 · 조마다 1장씩</div>`;
+    <div class="hero-sub">${state.label} · 번호 ${ts.length}개 · 조마다 1장씩</div>`;
   const le=PRV[0];$('pLastCard').hidden=!le;
   if(le){const s=pScore(le),d=POFF[le];
     $('pLastCard').innerHTML=`<div class="last-h"><h2>지난 ${le}회 결과</h2><span class="muted">${d.date.slice(5).replace('-','.')}(목)</span></div>
@@ -936,35 +990,72 @@ function renderPWeek(){
       <div class="last-res">${s.ranks.length?`<span class="chip win">${pRankText(s.ranks)}</span>${s.prize?won(s.prize)+'원':''}`:`<span class="chip">전부 낙첨</span><span class="muted">최고 끝 ${s.best}자리 · ${s.count}장</span>`}</div>
       <button class="link" id="pLastGo">번호별로 자세히</button>`;
     $('pLastGo').onclick=()=>{pRv=le;go('pension','review');setMode('preview');$('reviewNow').click()}}
-  $('pMarkTitle').textContent=`${e}회 구매표`;$('pMarkNote').textContent=bought?'산 번호':'이대로 사면 됩니다';
+  $('pMarkTitle').textContent=`${e}회 구매표`;$('pMarkNote').textContent=bought?'산 번호':!pSyncOK()?'새로고침으로 최신 기록 확인 필요':state.open?'이대로 사면 됩니다':'마감 회차 · 실제 구매만 편집으로 기록';
   $('pTickets').innerHTML=ts.length?ts.map((t,i)=>{
-    const base=(R?.tickets||F.pension_fixed?.tickets||[])[i]||{},alt=!bought&&base.alt?.length?base.alt:null,a=PALT[i]??-1;
-    const altRow=alt?`<div class="alt">${a>=0?`매진 대체 <b>${a+1}/${alt.length}</b> · 원래 ${base.n}`:'매진이면 뒤 5자리는 두고 앞자리만 바꿉니다'}
+    const base=pBaseTickets(e)[i]||{},alt=!bought&&!R?.final&&state.open&&base.alt?.length?base.alt:null,a=PALT[i]??(base.orig?(base.alt||[]).indexOf(base.n):-1);
+    const altRow=alt?`<div class="alt">${a>=0?`매진 대체 <b>${a+1}/${alt.length}</b> · 원래 ${base.orig||base.n}`:'매진이면 뒤 5자리는 두고 앞자리만 바꿉니다'}
       <button class="ghost" data-alt="${i}"${a>=alt.length-1?' disabled':''}>${a>=0?(a>=alt.length-1?'대체 번호 끝':'또 매진 · 다음 번호'):'매진 · 앞자리 바꾸기'}</button>${a>=0?`<button class="ghost" data-reset="${i}">원래 번호로</button>`:''}</div>`:'';
     return `<div class="tk"><div class="tk-h"><span class="tk-t">${esc(t.t)}${t.orig?`<span class="chip">대체 · 원래 ${t.orig}</span>`:''}</span><span class="muted">${t.jo.length===5?'1~5조 전부':t.jo.map(j=>j+'조').join('·')} · ${t.jo.length}장</span></div>
       ${dgHtml(t.n)}${joHtml(t.jo)}${altRow}</div>`}).join(''):'<p class="empty">이번 회차 구매표가 없습니다.</p>';
-  $('pTickets').querySelectorAll('[data-alt]').forEach(b=>b.onclick=()=>{const i=+b.dataset.alt;PALT[i]=(PALT[i]??-1)+1;ls.set('gz-palt-'+e,JSON.stringify(PALT));renderPWeek()});
-  $('pTickets').querySelectorAll('[data-reset]').forEach(b=>b.onclick=()=>{delete PALT[+b.dataset.reset];ls.set('gz-palt-'+e,JSON.stringify(PALT));renderPWeek()});
+  $('pTickets').querySelectorAll('[data-alt]').forEach(b=>b.onclick=()=>{const i=+b.dataset.alt;const t=pBaseTickets(e)[i],a=PALT[i]??(t.orig?(t.alt||[]).indexOf(t.n):-1);PALT[i]=a+1;ls.set('gz-palt-'+e,JSON.stringify(PALT));renderPWeek()});
+  $('pTickets').querySelectorAll('[data-reset]').forEach(b=>b.onclick=()=>{PALT[+b.dataset.reset]=-1;ls.set('gz-palt-'+e,JSON.stringify(PALT));renderPWeek()});
   $('pTotal').innerHTML=`<div class="total"><span>합계 <b>${cnt}장 · ${won(cnt*1000)}원</b></span><span class="muted">번호 ${ts.length}개</span></div>`;
   if(bought){$('pBuyBox').innerHTML=`<div class="done"><b>구매 완료${R.boughtAt?' · '+mdhm(R.boughtAt):''}</b><span class="muted">${cnt}장 · ${won(cnt*1000)}원. 목요일 추첨이 끝나면 결과와 기록에 반영됩니다.</span>
       <div class="row"><button class="ghost" id="pCancel">${pCancelArm?'한 번 더 누르면 완료 표시 취소':'구매 완료 표시 취소'}</button></div></div>`;
     $('pCancel').onclick=async()=>{if(!pCancelArm){pCancelArm=true;renderPWeek();return}pCancelArm=false;await cancelPension(e)}}
-  else{$('pBuyBox').innerHTML=`<button class="go accent" id="pBuyBtn"${cnt?'':' disabled'}>구매 완료로 기록</button><p class="note" style="margin-top:10px">실제 복권을 산 뒤 눌러 주세요. 매진으로 바꾼 번호도 그대로 기록됩니다.</p>`;
-    $('pBuyBtn').onclick=async()=>{$('pBuyBtn').disabled=true;await savePension(e,ts)}}
+  else{$('pBuyBox').innerHTML=`<button class="go accent" id="pBuyBtn"${cnt&&state.open&&pSyncOK()?'':' disabled'}>구매 완료로 기록</button><p class="note" style="margin-top:10px">${!pSyncOK()?'먼저 새로고침으로 최신 회차와 구매표를 확인해 주세요.':!state.open?'마감된 회차입니다. 실제로 산 기록은 아래 구매표 편집에서 입력해 주세요.':'실제 복권을 산 뒤 눌러 주세요. 매진으로 바꾼 번호도 그대로 기록됩니다.'}</p>`;
+    $('pBuyBtn').onclick=async()=>{$('pBuyBtn').disabled=true;await savePension(e,ts,expected)}}
 }
-async function savePension(e,ts){
+async function savePension(e,ts,expected=pFingerprint(pBaseTickets(e))){
   if(writing)return;writing=true;message('연금 구매 기록 저장 중…');
-  const at=Date.now(),cnt=pCount(ts),tickets=ts.map(t=>({t:t.t,n:t.n,jo:t.jo,...(t.orig?{orig:t.orig}:{})}));
-  try{const ok=await write('pension_rounds',r=>{r=r||{};if(r[e]?.bought)throw new Error('stale');
-      r[e]={...(r[e]||{}),date:pDateOf(e).toISOString().slice(0,10),tickets,bought:true,boughtAt:at,purchase:{at,count:cnt,amount:cnt*1000}};return r},`연금 ${e}회 구매 완료 ${cnt}장`);
+  const at=Date.now();
+  try{validatePTickets(ts);const cnt=pCount(ts),tickets=structuredClone(ts);
+    const ok=await write('pension_rounds',r=>{r=r||{};if(r[e]?.bought||pFingerprint(pBaseTickets(e,r[e]||null))!==expected)throw new Error('stale');
+      if(!pRoundState(e).open||r[e]?.final)throw new Error('closed');
+      r[e]={...(r[e]||{}),date:pDateString(e),tickets,excludedDrawIds:pExcluded(e),bought:true,boughtAt:at,purchase:{at,count:cnt,amount:cnt*1000}};return r},`연금 ${e}회 구매 완료 ${cnt}장`);
     if(ok){message('연금 구매 기록을 저장했습니다.');ls.set('gz-palt-'+e,'{}');PALT={}}}
+  catch(err){message(err.message==='duplicate'?'같은 번호·조가 중복입니다. 구매표 편집에서 확인해 주세요.':'번호는 6자리, 조는 1~5 중에서 선택해 주세요.')}
   finally{writing=false;renderPWeek()}
 }
-async function cancelPension(e){
+async function cancelPension(e,expected=JSON.stringify(PRD[e])){
   if(writing)return;writing=true;
-  try{if(await write('pension_rounds',r=>{if(r?.[e]){r[e].bought=false;delete r[e].boughtAt;delete r[e].purchase}return r},`연금 ${e}회 구매 기록 취소`))message('구매 완료 표시를 취소했습니다.')}
+  try{if(await write('pension_rounds',r=>{if(JSON.stringify(r?.[e])!==expected)throw new Error('stale');if(r?.[e]){r[e].bought=false;r[e].excludedDrawIds=pExcluded(e);delete r[e].boughtAt;delete r[e].purchase}return r},`연금 ${e}회 구매 기록 취소`))message('구매 완료 표시를 취소했습니다. 번호와 대체 목록은 보존했습니다.')}
   finally{writing=false;renderPWeek()}
 }
+let pEditRound=0,pEditRows=[],pEditExpected='',pEditBought=false,pEditDirty=false;
+function renderPEditor(e){
+  if(pEditDirty||writing)return;
+  pEditRound=e;pEditRows=pTickets(e);pEditExpected=JSON.stringify(PRD[e]||null);pEditBought=!!PRD[e]?.bought;
+  const choices=[...new Set([e,PNEXT,...Object.keys(PRD).map(Number)])].sort((a,b)=>b-a);
+  $('pEditor').innerHTML=`<label>회차 선택<select id="pEditSelect">${choices.map(i=>`<option value="${i}"${i===e?' selected':''}>${i}회 · ${pDateString(i)}</option>`).join('')}</select></label><div class="p-actions"><input type="number" id="pEditRoundInput" min="1" max="${PNEXT}" value="${e}" aria-label="직접 입력할 회차"><button class="ghost" id="pEditLoad">회차 열기</button></div><p class="note">실물과 같은 번호·조만 남겨 주세요. 앞자리 0도 포함해 6자리로 입력합니다. 기록만 바뀌며 복권 구매는 실행되지 않습니다.</p><div id="pEditRows"></div><div class="p-actions"><button class="ghost" id="pEditAdd">번호 추가</button></div><label><input type="checkbox" id="pEditBought"${pEditBought?' checked':''}>실제 구매 완료 (과거 회차도 정정 가능)</label><p class="p-edit-error" id="pEditError" role="alert"></p><div class="p-actions"><button class="go accent" id="pEditSave">${e}회 기록 저장</button><button class="ghost" id="pEditDiscard">편집 취소 · 최신 기록 보기</button></div>`;
+  const load=i=>{if(writing)return;if(!Number.isInteger(i)||i<1||i>PNEXT){$('pEditError').textContent='회차는 1~'+PNEXT+' 사이로 입력해 주세요.';return}if(pEditDirty){$('pEditError').textContent='작성 중인 내용을 먼저 저장하거나 편집 취소를 눌러 주세요.';$('pEditSelect').value=String(pEditRound);return}renderPEditor(i)};
+  $('pEditSelect').onchange=e=>load(+e.target.value);$('pEditLoad').onclick=()=>load(+$('pEditRoundInput').value);
+  $('pEditBought').onchange=e=>{pEditBought=e.target.checked;pEditDirty=true};
+  $('pEditAdd').onclick=()=>{if(writing)return;pEditRows.push({t:'직접 입력',n:'',jo:[]});pEditDirty=true;renderPEditRows()};
+  $('pEditDiscard').onclick=()=>{if(writing)return;pEditDirty=false;renderPEditor(pEditRound)};
+  $('pEditSave').onclick=savePEditor;renderPEditRows();
+}
+function renderPEditRows(){
+  $('pEditRows').innerHTML=pEditRows.map((t,i)=>`<div class="p-edit-row"><label>이름<input type="text" data-title="${i}" value="${esc(t.t)}" maxlength="60"></label><label>6자리 번호<input type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" data-number="${i}" value="${esc(t.n)}"></label><div class="p-joins">${[1,2,3,4,5].map(j=>`<label><input type="checkbox" data-join="${i}" value="${j}"${t.jo.includes(j)?' checked':''}>${j}조</label>`).join('')}</div><button class="ghost" data-remove="${i}">이 번호 제외</button></div>`).join('');
+  $('pEditRows').querySelectorAll('[data-title]').forEach(x=>x.oninput=()=>{pEditRows[+x.dataset.title].t=x.value;pEditDirty=true});
+  $('pEditRows').querySelectorAll('[data-number]').forEach(x=>x.oninput=()=>{const t=pEditRows[+x.dataset.number];t.n=x.value;delete t.alt;delete t.orig;delete t.sourceId;pEditDirty=true});
+  $('pEditRows').querySelectorAll('[data-join]').forEach(x=>x.onchange=()=>{const t=pEditRows[+x.dataset.join];t.jo=x.checked?[...t.jo,+x.value].sort():t.jo.filter(j=>j!==+x.value);pEditDirty=true});
+  $('pEditRows').querySelectorAll('[data-remove]').forEach(x=>x.onclick=()=>{pEditRows.splice(+x.dataset.remove,1);pEditDirty=true;renderPEditRows()});
+}
+async function savePEditor(){
+  if(writing)return;const e=pEditRound,bought=pEditBought,rows=structuredClone(pEditRows),expected=pEditExpected;
+  try{if(rows.length)validatePTickets(rows);else if(bought)throw new Error('invalid')}
+  catch(err){$('pEditError').textContent=err.message==='duplicate'?'같은 번호·조가 중복됩니다. 한 항목만 남겨 주세요.':'번호는 6자리 숫자, 조는 하나 이상 선택해 주세요. 빈 구매표는 구매 완료로 저장할 수 없습니다.';return}
+  writing=true;$('pEditor').querySelectorAll('input,select,button').forEach(x=>x.disabled=true);
+  try{const ok=await write('pension_rounds',r=>{r=r||{};if(JSON.stringify(r[e]||null)!==expected)throw new Error('stale');
+    const old=r[e]||{},at=Date.now();r[e]={...old,date:pDateString(e),tickets:rows,excludedDrawIds:pExcluded(e),bought,editedAt:at};
+    if(bought){r[e].boughtAt=old.boughtAt||at;r[e].purchase={at:old.boughtAt||at,count:pCount(rows),amount:pCount(rows)*1000}}
+    else{delete r[e].purchase;delete r[e].boughtAt}return r},`연금 ${e}회 실제 구매 기록 정정`);
+    if(ok){pEditDirty=false;PALT={};ls.set('gz-palt-'+e,'{}');renderPEditor(e);message(`${e}회 실제 구매 기록을 저장했습니다.`)}}
+  finally{writing=false;$('pEditor').querySelectorAll('input,select,button').forEach(x=>x.disabled=false);renderAll()}
+}
+$('pEditDetails').ontoggle=()=>{if($('pEditDetails').open&&!pEditDirty)renderPEditor(PNEXT)};
+$('pEditHistory').onclick=()=>{go('pension','week');$('pEditDetails').open=true;if(!pEditDirty)renderPEditor(PNEXT);$('pEditDetails').scrollIntoView({block:'start'})};
 function renderPPills(){
   $('pPills').innerHTML=PRV.map(e=>`<button data-e="${e}" aria-pressed="${e===pRv}">${e}회${pScore(e).ranks.length?'<span class="w" aria-label="당첨"></span>':''}</button>`).join('');
   $('pPills').querySelectorAll('button').forEach(b=>b.onclick=()=>{pRv=+b.dataset.e;setMode('preview')})}
@@ -985,23 +1076,24 @@ function pReviewRender(sh){
 }
 function renderPReview(){if(mode==='preview'&&!busy)pReviewRender(pRv&&POFF[pRv]?{done:true,jo:POFF[pRv].jo,d:[...POFF[pRv].n],b:[...POFF[pRv].b]}:null)}
 // 연금 앱 추첨 기록(분석용). '구매에 넣기'를 누른 것만 이번 회차 구매표에 1~5조 세트로 들어간다
-const PDRAWS=()=>(F.pension_draws||[]).filter(x=>x.round===PNEXT&&!PRD[PNEXT]?.bought).sort((a,b)=>b.at-a.at);
+const PDRAWS=()=>(F.pension_draws||[]).filter(x=>x.round===PNEXT&&!PRD[PNEXT]?.bought&&!PRD[PNEXT]?.final&&!POFF[PNEXT]).sort((a,b)=>b.at-a.at);
 function renderPLog(){
-  const xs=PDRAWS();$('pLogTitle').textContent=`연금 ${PNEXT}회 추첨 기록`;$('pLogNote').textContent=`${xs.length}세트 · 저장소에 기록`;
-  $('pLogList').innerHTML=xs.length?'<div class="list">'+xs.map(x=>`<div class="item"><span class="t">${hm(x.at)}</span><span class="chip">${x.jo}조</span>${dgHtml(x.n,{cls:'sm'})}<span class="muted" style="margin-left:6px">보너스 ${x.b}</span><button class="use" style="margin-left:auto" data-id="${x.id}" aria-pressed="${x.use===true}">${x.use===true?'구매에 넣음':'구매에 넣기'}</button></div>`).join('')+'</div>'
+  const xs=PDRAWS(),selected=new Set(pBaseTickets(PNEXT).map(t=>t.sourceId));$('pLogTitle').textContent=`연금 ${PNEXT}회 추첨 기록`;$('pLogNote').textContent=`${xs.length}세트 · 저장소에 기록`;
+  $('pLogList').innerHTML=xs.length?'<div class="list">'+xs.map(x=>`<div class="item"><span class="t">${hm(x.at)}</span><span class="chip">${x.jo}조</span>${dgHtml(x.n,{cls:'sm'})}<span class="muted" style="margin-left:6px">보너스 ${x.b}</span><button class="use" style="margin-left:auto" data-id="${x.id}" aria-pressed="${selected.has(x.id)}">${selected.has(x.id)?'구매에 넣음':'구매에 넣기'}</button></div>`).join('')+'</div>'
     :`<p class="empty">${PRD[PNEXT]?.bought?'이번 회차는 구매가 끝나 추첨 기록을 숨겼습니다.':'뽑은 번호는 분석용으로 여기 쌓입니다. ‘구매에 넣기’를 누른 번호만 이번 주 구매표에 1~5조 세트(5장)로 들어갑니다.'}</p>`;
   $('pLogList').querySelectorAll('.use').forEach(b=>b.onclick=async()=>{if(writing)return;writing=true;
-    try{if(await write('pension_draws',a=>(a||[]).map(x=>x.id===b.dataset.id?{...x,use:x.use!==true}:x),'연금 앱 추첨 구매 포함 변경'))message('구매표에 반영했습니다. 1~5조 세트라 5장(5,000원)이 늘거나 줄어듭니다.')}finally{writing=false;renderPLog();renderPWeek()}})}
+    try{if(await write('pension_rounds',r=>{r=r||{};const e=PNEXT,R=r[e]||{},x=xs.find(x=>x.id===b.dataset.id);if(R.bought||R.final||!pRoundState(e).open)throw new Error('closed');const ts=pBaseTickets(e,R),has=ts.some(t=>t.sourceId===x.id);const next=has?ts.filter(t=>t.sourceId!==x.id):ts.concat([{t:'추첨기',n:x.n,jo:[1,2,3,4,5],sourceId:x.id}]);if(next.length)validatePTickets(next);r[e]={...R,date:pDateString(e),tickets:next,excludedDrawIds:pExcluded(e)};return r},'연금 앱 추첨 구매 포함 변경'))message('구매표에 반영했습니다. 1~5조 세트라 5장(5,000원)이 늘거나 줄어듭니다.')}finally{writing=false;renderPLog();renderPWeek()}})}
 async function pGo(){
   const btn=$('goBtn'),tk=newRun();btn.disabled=true;busy=true;audio();
   if(mode==='pdraw'){
+    if(!pRoundState(PNEXT).open||!pSyncOK()||PRD[PNEXT]?.bought||PRD[PNEXT]?.final){busy=false;btn.disabled=false;message('추첨·구매가 가능한 최신 회차인지 새로고침으로 확인해 주세요.');return}
     if(ls.get('gz-pending-pdraw')){busy=false;btn.disabled=false;message('먼저 새로고침을 눌러 임시 추첨 기록을 저장해 주세요.');return}
     const x={jo:1+cInt(5),n:[...Array(6)].map(()=>cInt(10)).join(''),b:[...Array(6)].map(()=>cInt(10)).join('')};
     const round=PNEXT,ok=await pPerform(x,tk);if(tk.stop)return;busy=false;btn.disabled=false;btn.textContent='한 번 더 뽑기';
-    if(ok){const rec={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),round,...x,use:false,at:Date.now()};
+    if(ok){writing=true;try{const rec={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),round,...x,use:false,at:Date.now()};
       ls.set('gz-pending-pdraw',JSON.stringify(rec));
       if(await write('pension_draws',a=>{a=a||[];if(!a.some(y=>y.id===rec.id))a.push(rec);return a},`연금 앱 추첨 ${round}회 ${x.jo}조 ${x.n}`)){ls.set('gz-pending-pdraw','');status('추첨 완료 · 분석 기록 저장됨');renderPLog()}
-      else message('추첨 번호가 이 기기에 임시 보관됐습니다. 새로고침으로 저장을 다시 시도해 주세요.')}
+      else message('추첨 번호가 이 기기에 임시 보관됐습니다. 새로고침으로 저장을 다시 시도해 주세요.')}finally{writing=false}}
   }else{
     const x=POFF[pRv],sh={done:false,d:[],b:[]};pReviewRender(sh);
     const ok=await pPerform(x,tk,{onBall:(w,i)=>{if(w==='m'){if(i===0)sh.jo=x.jo;else sh.d[i-1]=x.n[i-1]}else sh.b[i]=x.b[i];pReviewRender(sh)}});
@@ -1014,13 +1106,45 @@ function renderPStats(){
     rows+=`<tr><td>${e}</td><td>${d.date.slice(5).replace('-','.')}</td><td>${d.jo}조 ${d.n}</td><td>${s.count}</td><td>${won(s.cost)}</td><td>끝 ${s.best}</td><td${s.ranks.length?' class="w"':''}>${pRankText(s.ranks)||'–'}</td><td class="${net<0?'neg':'w'}">${net>0?'+':''}${won(net)}</td></tr>`});
   const net=prize-cost;PT={cost,prize,ann:ranks.filter(k=>P_ANN[k])};
   $('pRange').textContent=PRV.length?`${PRV[PRV.length-1]}~${PRV[0]}회 · ${PRV.length}회 구매`:'';
-  $('pKpis').innerHTML=[[`${won(cost)}원`,'구매액',''],[`${won(prize)}원`,'당첨금(3~7등)','pos'],[`${net>0?'+':''}${won(net)}원`,'손익',net>=0?'pos':'neg'],[`${ranks.length}장`,pRankText(ranks)||'당첨 없음','']]
+  $('pKpis').innerHTML=[[`${won(cost)}원`,'결과 확정 구매액',''],[`${won(prize)}원`,'당첨금(3~7등)','pos'],[`${net>0?'+':''}${won(net)}원`,'결과 확정 손익',net>=0?'pos':'neg'],[`${ranks.length}장`,pRankText(ranks)||'당첨 없음','']]
     .map(([b,s,c])=>`<div class="kpi ${c}"><b>${b}</b><span>${s}</span></div>`).join('');
+  renderPAnnuities();
+  const pending=Object.entries(PRD).filter(([e,r])=>r.bought&&!POFF[e]).reduce((a,[e,r])=>a+pCount(r.tickets||[])*1000,0);$('pPending').textContent=`추첨·결과 대기 구매액 ${won(pending)}원 (손익에서 제외)`;
   $('pTbl').innerHTML=`<thead><tr><th>회차</th><th>추첨일</th><th>1등 번호</th><th>장</th><th>구매액</th><th>최고</th><th>당첨</th><th>손익</th></tr></thead><tbody>${rows||'<tr><td colspan="8" class="l" style="color:var(--faint);padding:16px 4px">구매 기록이 쌓이면 여기 회차별로 보입니다.</td></tr>'}</tbody>`;
 }
+function pAnnuityItems(){
+  const items=[];
+  for(const e of PRV)for(const t of PRD[e].tickets)for(const jo of t.jo){
+    const rank=pRank(t.n,jo,POFF[e]);if(!P_ANN[rank])continue;
+    const key=`${jo}:${t.n}:${rank}`,months=rank===1?240:120,gross=rank===1?7000000:1000000;
+    items.push({e,key,t,jo,rank,months,gross,claim:PRD[e].claims?.[key]||{}});
+  }return items;
+}
+const pClaimDrafts=new Map();
+function renderPAnnuities(){
+  const items=pAnnuityItems();
+  $('pAnnuities').innerHTML=items.length?'<h2>연금식 당첨 · 수령 관리</h2><p class="note">월 금액은 세전입니다. 실제 받은 개월 수를 직접 기록하며, 수령액은 위 손익에 합산하지 않습니다.</p>'+items.map((x,i)=>{
+    x.draftKey=x.e+':'+x.key;x.expected=JSON.stringify(PRD[x.e]);const draft=pClaimDrafts.get(x.draftKey),received=x.claim.receivedMonths||0;
+    return `<details class="p-edit"${draft?' open':''}><summary>${x.e}회 · ${x.jo}조 ${x.t.n} · ${pName(x.rank)} · ${received===x.months?'수령 완료':received?'수령 중':'수령 전'}</summary><p>월 ${won(x.gross)}원 × ${x.months}개월 · 기록한 수령 ${received}/${x.months}개월</p><label>첫 수령 월 (선택)<input type="month" id="pClaimMonth${i}" value="${esc(draft?.startMonth??x.claim.startMonth??'')}"${writing?' disabled':''}></label><label>실제로 받은 개월 수<input type="number" min="0" max="${x.months}" id="pClaimCount${i}" value="${esc(draft?.raw??received)}"${writing?' disabled':''}></label><button class="ghost" data-claim="${i}"${writing?' disabled':''}>수령 기록 저장</button><button class="ghost" data-claim-discard="${i}"${writing?' disabled':''}>편집 취소 · 최신 기록 보기</button><p id="pClaimError${i}" role="alert"></p></details>`;
+  }).join(''):'<p class="note">연금식 당첨이 생기면 월 금액·기간·수령 상태를 여기서 관리합니다.</p>';
+  items.forEach((x,i)=>{
+    const remember=()=>{if(writing)return;pClaimDrafts.set(x.draftKey,{raw:$('pClaimCount'+i).value,startMonth:$('pClaimMonth'+i).value,expected:pClaimDrafts.get(x.draftKey)?.expected||x.expected})};
+    $('pClaimCount'+i).oninput=remember;$('pClaimMonth'+i).oninput=remember;
+  });
+  $('pAnnuities').querySelectorAll('[data-claim-discard]').forEach(b=>b.onclick=()=>{if(writing)return;pClaimDrafts.delete(items[+b.dataset.claimDiscard].draftKey);renderPAnnuities()});
+  $('pAnnuities').querySelectorAll('[data-claim]').forEach(b=>b.onclick=async()=>{
+    if(writing)return;const i=+b.dataset.claim,x=items[i],raw=$('pClaimCount'+i).value,receivedMonths=Number(raw),startMonth=$('pClaimMonth'+i).value,expected=pClaimDrafts.get(x.draftKey)?.expected||x.expected;
+    if(raw===''||!Number.isInteger(receivedMonths)||receivedMonths<0||receivedMonths>x.months||(startMonth&&!/^\d{4}-(0[1-9]|1[0-2])$/.test(startMonth))){$('pClaimError'+i).textContent='수령 월과 개월 수 범위를 확인해 주세요.';return}
+    writing=true;$('pAnnuities').querySelectorAll('input,button').forEach(x=>x.disabled=true);
+    try{if(await write('pension_rounds',r=>{if(JSON.stringify(r?.[x.e])!==expected)throw new Error('stale');r[x.e].claims={...r[x.e].claims,[x.key]:{receivedMonths,startMonth,updatedAt:Date.now()}};return r},`연금 ${x.e}회 수령 기록`)){pClaimDrafts.delete(x.draftKey);for(const [key,draft] of pClaimDrafts)if(key.startsWith(x.e+':')&&draft.expected===expected)draft.expected=JSON.stringify(PRD[x.e]);message('수령 기록을 저장했습니다.')}}
+    finally{writing=false;renderPAnnuities()}
+  });
+}
 function renderTotals(){const c=LT.cost+PT.cost,p=LT.prize+PT.prize,n=p-c;
-  const h=`<div><span>로또 + 연금 전체 손익</span><br><b class="${n<0?'neg':'pos'}">${n>0?'+':''}${won(n)}원</b></div><div style="text-align:right"><span>구매 ${won(c)}원</span><br><span>당첨 ${won(p)}원${PT.ann.length?` + 연금식 ${PT.ann.length}건`:''}</span></div>`;
-  $('lAll').innerHTML=h;$('pAll').innerHTML=h}
+  const h=`<div><span>로또 + 연금 결과 확정 손익</span><br><b class="${n<0?'neg':'pos'}">${n>0?'+':''}${won(n)}원</b></div><div style="text-align:right"><span>구매 ${won(c)}원</span><br><span>당첨 ${won(p)}원${PT.ann.length?` + 연금식 ${PT.ann.length}건`:''}</span></div>`;
+  const pendingL=Object.entries(F.rounds||{}).filter(([e,r])=>r.bought&&!DRAW[e]).reduce((a,[e,r])=>a+(r.purchase?.amount??(r.groups||[]).reduce((v,g)=>v+g.l.length*1000,0)),0),pendingP=Object.entries(PRD).filter(([e,r])=>r.bought&&!POFF[e]).reduce((a,[e,r])=>a+pCount(r.tickets||[])*1000,0);
+  const note=`<p class="note" style="width:100%;color:inherit">결과 대기 구매 ${won(pendingL+pendingP)}원 별도 · 연금식 당첨금은 손익에서 제외합니다.</p>`;
+  $('lAll').innerHTML=h+note;$('pAll').innerHTML=h+note}
 
 /* ── 화면 전환: 상단 로또/연금, 하단 이번 주·추첨·결과·기록 ── */
 let GAME=ls.get('gz-game')==='pension'?'pension':'lotto',TAB='week';
@@ -1055,6 +1179,7 @@ $('refreshBtn').onclick=async e=>{if(busy||writing){message('진행 중인 추�
   b.disabled=false;b.classList.remove('spin')};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 
+setInterval(()=>{if(!busy&&!writing&&GAME==='pension'&&TAB==='week')renderPWeek()},60000);
 readHash();
 if(F.official&&F.rounds){recompute();precompute();renderHeader()}
 setMode('draw');renderAll();show();syncAll();

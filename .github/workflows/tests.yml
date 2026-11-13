@@ -1,0 +1,13 @@
+name: 앱 회귀 검사
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node tests/core.test.cjs
+      - run: node tests/pension.test.cjs
